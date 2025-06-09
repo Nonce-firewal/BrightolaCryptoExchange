@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import { usePricing } from '../../contexts/PricingContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdmin } from '../../contexts/AdminContext';
 import { 
   ArrowUpRight, 
   Calculator, 
@@ -12,7 +13,10 @@ import {
   CheckCircle,
   Clock,
   Wallet,
-  Copy
+  Copy,
+  Network,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -20,7 +24,9 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 const SellCrypto: React.FC = () => {
   const { prices, loading } = usePricing();
   const { user } = useAuth();
+  const { getActiveWalletAddress } = useAdmin();
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
+  const [selectedNetwork, setSelectedNetwork] = useState('');
   const [amount, setAmount] = useState('');
   const [amountType, setAmountType] = useState<'crypto' | 'naira'>('crypto');
   const [bankDetails, setBankDetails] = useState({
@@ -30,7 +36,8 @@ const SellCrypto: React.FC = () => {
   });
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [walletAddress] = useState('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'); // Mock wallet address
+  const [copied, setCopied] = useState(false);
+  const [showWalletAddress, setShowWalletAddress] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: formRef, isVisible: formVisible } = useScrollAnimation();
@@ -43,9 +50,37 @@ const SellCrypto: React.FC = () => {
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8)
     ) : '';
 
+  // Get available networks for selected crypto
+  const getAvailableNetworks = (crypto: string) => {
+    const networkMap: Record<string, string[]> = {
+      'BTC': ['Bitcoin'],
+      'ETH': ['Ethereum'],
+      'USDT': ['Ethereum (ERC-20)', 'Tron (TRC-20)', 'Binance Smart Chain (BEP-20)'],
+      'SOL': ['Solana'],
+      'BNB': ['Binance Smart Chain'],
+      'ADA': ['Cardano']
+    };
+    return networkMap[crypto] || [];
+  };
+
+  const availableNetworks = getAvailableNetworks(selectedCrypto);
+  const currentNetwork = selectedNetwork || availableNetworks[0];
+  const walletAddress = getActiveWalletAddress(selectedCrypto, currentNetwork);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSell = async () => {
     if (user?.kycStatus !== 'approved') {
       alert('Please complete KYC verification before selling.');
+      return;
+    }
+
+    if (!walletAddress) {
+      alert('Wallet address not available for this cryptocurrency and network.');
       return;
     }
 
@@ -54,11 +89,6 @@ const SellCrypto: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 3000));
     setStep(3);
     setIsProcessing(false);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    // You could add a toast notification here
   };
 
   // Mock portfolio data
@@ -81,33 +111,64 @@ const SellCrypto: React.FC = () => {
             <p className="text-gray-400 mb-6">
               Your sell order has been created. Send your {selectedCrypto} to the address below to complete the transaction.
             </p>
-            <div className="bg-gray-900 rounded-lg p-4 mb-6">
-              <div className="text-sm text-gray-400 mb-2">Send {selectedCrypto} to:</div>
-              <div className="flex items-center justify-between bg-gray-800 rounded p-3">
-                <span className="text-white font-mono text-sm break-all">{walletAddress}</span>
-                <button
-                  onClick={() => copyToClipboard(walletAddress)}
-                  className="ml-2 text-orange-500 hover:text-orange-400 transition-colors"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Amount to send:</span>
-                  <span className="text-white font-semibold">{amount} {selectedCrypto}</span>
+            
+            {walletAddress && (
+              <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                <div className="text-sm text-gray-400 mb-2">Send {selectedCrypto} to:</div>
+                <div className="mb-3">
+                  <div className="text-xs text-gray-500 mb-1">Network: {currentNetwork}</div>
+                  <div className="flex items-center justify-between bg-gray-800 rounded p-3">
+                    <span className="text-white font-mono text-sm break-all">
+                      {showWalletAddress 
+                        ? walletAddress.address 
+                        : walletAddress.address.substring(0, 8) + '...' + walletAddress.address.substring(walletAddress.address.length - 8)
+                      }
+                    </span>
+                    <div className="flex items-center space-x-2 ml-2">
+                      <button
+                        onClick={() => setShowWalletAddress(!showWalletAddress)}
+                        className="text-gray-400 hover:text-gray-300 transition-colors"
+                      >
+                        {showWalletAddress ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(walletAddress.address)}
+                        className="text-orange-500 hover:text-orange-400 transition-colors"
+                      >
+                        {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">You'll receive:</span>
-                  <span className="text-white font-semibold">₦{calculatedAmount}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Amount to send:</span>
+                    <span className="text-white font-semibold">{amount} {selectedCrypto}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">You'll receive:</span>
+                    <span className="text-white font-semibold">₦{calculatedAmount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Order ID:</span>
+                    <span className="text-white font-mono text-sm">ORD{Date.now()}</span>
+                  </div>
                 </div>
               </div>
+            )}
+            
+            <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-3 mb-6">
+              <p className="text-blue-400 text-sm">
+                ⚠️ Only send {selectedCrypto} on the {currentNetwork} network. Sending on wrong network will result in loss of funds.
+              </p>
             </div>
+            
             <AnimatedButton
               variant="primary"
               onClick={() => {
                 setStep(1);
                 setAmount('');
+                setSelectedNetwork('');
               }}
               className="w-full"
             >
@@ -177,14 +238,21 @@ const SellCrypto: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {Object.values(prices).map((coin) => {
                       const portfolioItem = portfolio.find(p => p.symbol === coin.symbol);
+                      const hasWallet = getActiveWalletAddress(coin.symbol);
                       return (
                         <button
                           key={coin.symbol}
-                          onClick={() => setSelectedCrypto(coin.symbol)}
+                          onClick={() => {
+                            setSelectedCrypto(coin.symbol);
+                            setSelectedNetwork('');
+                          }}
+                          disabled={!hasWallet}
                           className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 ${
                             selectedCrypto === coin.symbol
                               ? 'border-orange-500 bg-orange-500/20'
-                              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                              : hasWallet
+                              ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                              : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
                           }`}
                         >
                           <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -197,11 +265,81 @@ const SellCrypto: React.FC = () => {
                               {portfolioItem.amount} {coin.symbol}
                             </div>
                           )}
+                          {!hasWallet && (
+                            <div className="text-red-400 text-xs mt-1">No wallet</div>
+                          )}
                         </button>
                       );
                     })}
                   </div>
                 </div>
+
+                {/* Network Selection */}
+                {availableNetworks.length > 1 && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-3">Select Network</label>
+                    <div className="space-y-2">
+                      {availableNetworks.map((network) => {
+                        const networkWallet = getActiveWalletAddress(selectedCrypto, network);
+                        return (
+                          <button
+                            key={network}
+                            onClick={() => setSelectedNetwork(network)}
+                            disabled={!networkWallet}
+                            className={`w-full p-3 rounded-lg border transition-all duration-300 ${
+                              (selectedNetwork || availableNetworks[0]) === network
+                                ? 'border-blue-500 bg-blue-500/20'
+                                : networkWallet
+                                ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                                : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <Network className="w-5 h-5 text-blue-400" />
+                                <span className="text-white font-medium">{network}</span>
+                              </div>
+                              {!networkWallet && (
+                                <span className="text-red-400 text-sm">Unavailable</span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Wallet Address Preview */}
+                {walletAddress && (
+                  <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-400 text-sm">Deposit Address ({currentNetwork}):</span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setShowWalletAddress(!showWalletAddress)}
+                          className="text-gray-400 hover:text-gray-300 transition-colors"
+                        >
+                          {showWalletAddress ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(walletAddress.address)}
+                          className="text-orange-500 hover:text-orange-400 transition-colors"
+                        >
+                          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 rounded p-3">
+                      <span className="text-white font-mono text-sm break-all">
+                        {showWalletAddress 
+                          ? walletAddress.address 
+                          : walletAddress.address.substring(0, 12) + '...' + walletAddress.address.substring(walletAddress.address.length - 12)
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Amount Input */}
                 <div className="mb-6">
@@ -282,7 +420,15 @@ const SellCrypto: React.FC = () => {
                   variant="primary"
                   size="lg"
                   onClick={() => setStep(2)}
-                  disabled={!amount || !selectedCrypto || !bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName || user?.kycStatus !== 'approved'}
+                  disabled={
+                    !amount || 
+                    !selectedCrypto || 
+                    !bankDetails.accountName || 
+                    !bankDetails.accountNumber || 
+                    !bankDetails.bankName || 
+                    user?.kycStatus !== 'approved' ||
+                    !walletAddress
+                  }
                   className="w-full"
                   icon={ArrowUpRight}
                 >
@@ -307,6 +453,10 @@ const SellCrypto: React.FC = () => {
                       <span className="text-white font-medium">{selectedCrypto}</span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-gray-400">Network:</span>
+                      <span className="text-white font-medium">{currentNetwork}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-gray-400">Amount to sell:</span>
                       <span className="text-white font-medium">
                         {amountType === 'crypto' ? amount : calculatedAmount} {selectedCrypto}
@@ -328,6 +478,14 @@ const SellCrypto: React.FC = () => {
                       <span className="text-gray-400">Bank:</span>
                       <span className="text-white font-medium">{bankDetails.bankName}</span>
                     </div>
+                    {walletAddress && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Deposit Address:</span>
+                        <span className="text-white font-mono text-sm">
+                          {walletAddress.address.substring(0, 8)}...{walletAddress.address.substring(walletAddress.address.length - 8)}
+                        </span>
+                      </div>
+                    )}
                     <hr className="border-gray-700" />
                     <div className="flex justify-between text-lg">
                       <span className="text-white font-semibold">You'll receive:</span>
@@ -342,11 +500,13 @@ const SellCrypto: React.FC = () => {
                 <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
                   <div className="flex items-center mb-2">
                     <Shield className="w-5 h-5 text-blue-400 mr-2" />
-                    <span className="text-blue-300 font-medium">Secure Transaction</span>
+                    <span className="text-blue-300 font-medium">Important Notice</span>
                   </div>
-                  <p className="text-blue-400 text-sm">
-                    Your funds will be transferred to your bank account within 5-15 minutes after we receive your cryptocurrency.
-                  </p>
+                  <div className="text-blue-400 text-sm space-y-1">
+                    <p>• Only send {selectedCrypto} on the {currentNetwork} network</p>
+                    <p>• Your funds will be transferred within 5-15 minutes after confirmation</p>
+                    <p>• Sending on wrong network will result in loss of funds</p>
+                  </div>
                 </div>
 
                 <div className="flex space-x-3">
@@ -385,27 +545,37 @@ const SellCrypto: React.FC = () => {
                 Your Portfolio
               </h3>
               <div className="space-y-3">
-                {portfolio.map((item, index) => (
-                  <div 
-                    key={item.symbol}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer"
-                    onClick={() => setSelectedCrypto(item.symbol)}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">{item.symbol.substring(0, 2)}</span>
+                {portfolio.map((item, index) => {
+                  const hasWallet = getActiveWalletAddress(item.symbol);
+                  return (
+                    <div 
+                      key={item.symbol}
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                        hasWallet 
+                          ? 'hover:bg-gray-700/50 cursor-pointer' 
+                          : 'opacity-50 cursor-not-allowed'
+                      }`}
+                      onClick={() => hasWallet && setSelectedCrypto(item.symbol)}
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-xs">{item.symbol.substring(0, 2)}</span>
+                        </div>
+                        <div>
+                          <div className="text-white font-medium text-sm">{item.symbol}</div>
+                          <div className="text-gray-400 text-xs">{item.amount} {item.symbol}</div>
+                          {!hasWallet && (
+                            <div className="text-red-400 text-xs">No wallet available</div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-white font-medium text-sm">{item.symbol}</div>
-                        <div className="text-gray-400 text-xs">{item.amount} {item.symbol}</div>
+                      <div className="text-right">
+                        <div className="text-white font-medium text-sm">₦{item.value.toLocaleString()}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-white font-medium text-sm">₦{item.value.toLocaleString()}</div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -432,29 +602,39 @@ const SellCrypto: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.values(prices).map((coin, index) => (
-                    <div 
-                      key={coin.symbol}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer"
-                      onClick={() => setSelectedCrypto(coin.symbol)}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">{coin.symbol.substring(0, 2)}</span>
-                        </div>
-                        <div>
-                          <div className="text-white font-medium text-sm">{coin.symbol}</div>
-                          <div className={`text-xs ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
+                  {Object.values(prices).map((coin, index) => {
+                    const hasWallet = getActiveWalletAddress(coin.symbol);
+                    return (
+                      <div 
+                        key={coin.symbol}
+                        className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                          hasWallet 
+                            ? 'hover:bg-gray-700/50 cursor-pointer' 
+                            : 'opacity-50 cursor-not-allowed'
+                        }`}
+                        onClick={() => hasWallet && setSelectedCrypto(coin.symbol)}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">{coin.symbol.substring(0, 2)}</span>
+                          </div>
+                          <div>
+                            <div className="text-white font-medium text-sm">{coin.symbol}</div>
+                            <div className={`text-xs ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
+                            </div>
+                            {!hasWallet && (
+                              <div className="text-red-400 text-xs">No wallet</div>
+                            )}
                           </div>
                         </div>
+                        <div className="text-right">
+                          <div className="text-white font-medium text-sm">₦{coin.priceNGN.toLocaleString()}</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-medium text-sm">₦{coin.priceNGN.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

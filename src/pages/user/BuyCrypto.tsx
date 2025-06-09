@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import { usePricing } from '../../contexts/PricingContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAdmin } from '../../contexts/AdminContext';
 import { 
   ArrowDownRight, 
   Calculator, 
@@ -12,7 +13,9 @@ import {
   CheckCircle,
   Clock,
   Banknote,
-  Smartphone
+  Smartphone,
+  Copy,
+  Building
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -20,16 +23,22 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 const BuyCrypto: React.FC = () => {
   const { prices, loading } = usePricing();
   const { user } = useAuth();
+  const { getActiveBankAccounts } = useAdmin();
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [amount, setAmount] = useState('');
   const [amountType, setAmountType] = useState<'crypto' | 'naira'>('naira');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
+  const [selectedBank, setSelectedBank] = useState('');
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: formRef, isVisible: formVisible } = useScrollAnimation();
   const { ref: marketRef, isVisible: marketVisible } = useScrollAnimation();
+
+  const activeBanks = getActiveBankAccounts();
+  const selectedBankAccount = activeBanks.find(bank => bank.id === selectedBank);
 
   const selectedPrice = prices[selectedCrypto];
   const calculatedAmount = amount ? 
@@ -38,9 +47,20 @@ const BuyCrypto: React.FC = () => {
       (parseFloat(amount) * selectedPrice?.priceNGN || 0).toLocaleString()
     ) : '';
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handlePurchase = async () => {
     if (user?.kycStatus !== 'approved') {
       alert('Please complete KYC verification before making purchases.');
+      return;
+    }
+
+    if (paymentMethod === 'bank_transfer' && !selectedBank) {
+      alert('Please select a bank account for payment.');
       return;
     }
 
@@ -86,25 +106,60 @@ const BuyCrypto: React.FC = () => {
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
               <CheckCircle className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Purchase Successful!</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">Purchase Order Created!</h2>
             <p className="text-gray-400 mb-6">
-              Your {selectedCrypto} purchase has been initiated. You'll receive your crypto once payment is confirmed.
+              Your {selectedCrypto} purchase order has been created. Complete the payment to receive your crypto.
             </p>
+            
+            {paymentMethod === 'bank_transfer' && selectedBankAccount && (
+              <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                <h3 className="text-white font-semibold mb-3">Payment Details</h3>
+                <div className="space-y-2 text-left">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Bank:</span>
+                    <span className="text-white">{selectedBankAccount.bankName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Account Name:</span>
+                    <span className="text-white">{selectedBankAccount.accountName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Account Number:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white font-mono">{selectedBankAccount.accountNumber}</span>
+                      <button
+                        onClick={() => copyToClipboard(selectedBankAccount.accountNumber)}
+                        className="text-orange-500 hover:text-orange-400 transition-colors"
+                      >
+                        {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Amount to Pay:</span>
+                    <span className="text-orange-500 font-bold">₦{amount}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="bg-gray-900 rounded-lg p-4 mb-6">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-400">Amount:</span>
+                <span className="text-gray-400">You will receive:</span>
                 <span className="text-white font-semibold">{calculatedAmount} {selectedCrypto}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">Total Paid:</span>
-                <span className="text-white font-semibold">₦{amount}</span>
+                <span className="text-gray-400">Order ID:</span>
+                <span className="text-white font-mono">ORD{Date.now()}</span>
               </div>
             </div>
+            
             <AnimatedButton
               variant="primary"
               onClick={() => {
                 setStep(1);
                 setAmount('');
+                setSelectedBank('');
               }}
               className="w-full"
             >
@@ -149,6 +204,17 @@ const BuyCrypto: React.FC = () => {
             <div>
               <p className="text-yellow-300 font-medium">KYC Verification Required</p>
               <p className="text-yellow-400 text-sm">Complete your KYC verification to make purchases.</p>
+            </div>
+          </div>
+        )}
+
+        {/* No Active Banks Warning */}
+        {activeBanks.length === 0 && (
+          <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
+            <div>
+              <p className="text-red-300 font-medium">No Payment Methods Available</p>
+              <p className="text-red-400 text-sm">Bank transfer is temporarily unavailable. Please try again later.</p>
             </div>
           </div>
         )}
@@ -245,13 +311,17 @@ const BuyCrypto: React.FC = () => {
                   <div className="space-y-3">
                     {paymentMethods.map((method) => {
                       const Icon = method.icon;
+                      const isDisabled = method.id === 'bank_transfer' && activeBanks.length === 0;
                       return (
                         <button
                           key={method.id}
-                          onClick={() => setPaymentMethod(method.id)}
+                          onClick={() => !isDisabled && setPaymentMethod(method.id)}
+                          disabled={isDisabled}
                           className={`w-full p-4 rounded-lg border transition-all duration-300 transform hover:scale-[1.02] ${
                             paymentMethod === method.id
                               ? 'border-orange-500 bg-orange-500/20'
+                              : isDisabled
+                              ? 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
                               : 'border-gray-700 bg-gray-900 hover:border-gray-600'
                           }`}
                         >
@@ -261,6 +331,9 @@ const BuyCrypto: React.FC = () => {
                               <div className="text-left">
                                 <div className="text-white font-medium">{method.name}</div>
                                 <div className="text-gray-400 text-sm">{method.description}</div>
+                                {isDisabled && (
+                                  <div className="text-red-400 text-xs">Currently unavailable</div>
+                                )}
                               </div>
                             </div>
                             <div className="text-right">
@@ -274,11 +347,45 @@ const BuyCrypto: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Bank Selection for Bank Transfer */}
+                {paymentMethod === 'bank_transfer' && activeBanks.length > 0 && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-3">Select Bank Account</label>
+                    <div className="space-y-3">
+                      {activeBanks.map((bank) => (
+                        <button
+                          key={bank.id}
+                          onClick={() => setSelectedBank(bank.id)}
+                          className={`w-full p-4 rounded-lg border transition-all duration-300 transform hover:scale-[1.02] ${
+                            selectedBank === bank.id
+                              ? 'border-green-500 bg-green-500/20'
+                              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Building className="w-6 h-6 text-green-500" />
+                            <div className="text-left">
+                              <div className="text-white font-medium">{bank.bankName}</div>
+                              <div className="text-gray-400 text-sm">{bank.accountName}</div>
+                              <div className="text-gray-400 text-sm font-mono">{bank.accountNumber}</div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <AnimatedButton
                   variant="primary"
                   size="lg"
                   onClick={() => setStep(2)}
-                  disabled={!amount || !selectedCrypto || user?.kycStatus !== 'approved'}
+                  disabled={
+                    !amount || 
+                    !selectedCrypto || 
+                    user?.kycStatus !== 'approved' ||
+                    (paymentMethod === 'bank_transfer' && (!selectedBank || activeBanks.length === 0))
+                  }
                   className="w-full"
                   icon={ArrowDownRight}
                 >
@@ -318,6 +425,18 @@ const BuyCrypto: React.FC = () => {
                         {paymentMethods.find(m => m.id === paymentMethod)?.name}
                       </span>
                     </div>
+                    {selectedBankAccount && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Bank:</span>
+                          <span className="text-white font-medium">{selectedBankAccount.bankName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Account:</span>
+                          <span className="text-white font-medium">{selectedBankAccount.accountNumber}</span>
+                        </div>
+                      </>
+                    )}
                     <hr className="border-gray-700" />
                     <div className="flex justify-between text-lg">
                       <span className="text-white font-semibold">Total:</span>
@@ -335,7 +454,10 @@ const BuyCrypto: React.FC = () => {
                     <span className="text-blue-300 font-medium">Secure Payment</span>
                   </div>
                   <p className="text-blue-400 text-sm">
-                    Your payment is secured with bank-grade encryption. Complete the payment to receive your cryptocurrency.
+                    {paymentMethod === 'bank_transfer' 
+                      ? 'Transfer the exact amount to the selected bank account. Your crypto will be credited once payment is confirmed.'
+                      : 'Your payment is secured with bank-grade encryption. Complete the payment to receive your cryptocurrency.'
+                    }
                   </p>
                 </div>
 
@@ -435,6 +557,32 @@ const BuyCrypto: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {/* Available Banks Info */}
+            {activeBanks.length > 0 && (
+              <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <Building className="w-5 h-5 text-green-400 mr-2" />
+                  Available Banks
+                </h3>
+                <div className="space-y-2">
+                  {activeBanks.slice(0, 3).map((bank) => (
+                    <div key={bank.id} className="flex items-center space-x-3 p-2 bg-gray-900 rounded-lg">
+                      <Building className="w-4 h-4 text-green-400" />
+                      <div>
+                        <div className="text-white text-sm font-medium">{bank.bankName}</div>
+                        <div className="text-gray-400 text-xs">{bank.accountName}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {activeBanks.length > 3 && (
+                    <div className="text-gray-400 text-sm text-center">
+                      +{activeBanks.length - 3} more banks available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
