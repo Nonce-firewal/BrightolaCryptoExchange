@@ -27,7 +27,10 @@ import {
   CreditCard,
   X,
   Send,
-  RefreshCw
+  RefreshCw,
+  UserCheck,
+  UserPlus,
+  Zap
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -125,8 +128,8 @@ const ReferralDashboard: React.FC = () => {
       tier: 1,
       name: 'Bronze',
       minReferrals: 0,
-      commission: 10,
-      bonus: 5000,
+      bonus: 1000,
+      tierBonus: 5000,
       color: 'orange',
       icon: Award
     },
@@ -134,8 +137,8 @@ const ReferralDashboard: React.FC = () => {
       tier: 2,
       name: 'Silver',
       minReferrals: 10,
-      commission: 15,
-      bonus: 15000,
+      bonus: 1000,
+      tierBonus: 15000,
       color: 'gray',
       icon: Star
     },
@@ -143,8 +146,8 @@ const ReferralDashboard: React.FC = () => {
       tier: 3,
       name: 'Gold',
       minReferrals: 25,
-      commission: 20,
-      bonus: 35000,
+      bonus: 1000,
+      tierBonus: 35000,
       color: 'yellow',
       icon: Target
     },
@@ -152,8 +155,8 @@ const ReferralDashboard: React.FC = () => {
       tier: 4,
       name: 'Platinum',
       minReferrals: 50,
-      commission: 25,
-      bonus: 75000,
+      bonus: 1000,
+      tierBonus: 75000,
       color: 'purple',
       icon: Gift
     }
@@ -178,7 +181,7 @@ const ReferralDashboard: React.FC = () => {
                 <Users className="w-8 h-8 text-purple-400 mr-3" />
                 Referral Dashboard
               </h1>
-              <p className="text-gray-400 mt-1">Earn rewards by inviting friends to trade crypto</p>
+              <p className="text-gray-400 mt-1">Earn ₦1,000 for each qualified referral (3+ transactions)</p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-3">
               <RefreshButton 
@@ -211,7 +214,7 @@ const ReferralDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Your Referral Link</h3>
-              <p className="text-purple-300 text-sm mb-4">Share this link to earn commissions on every trade</p>
+              <p className="text-purple-300 text-sm mb-4">Share this link to earn ₦1,000 per qualified user</p>
               <div className="flex items-center space-x-3">
                 <div className="bg-gray-900 rounded-lg px-4 py-2 flex-1 max-w-md">
                   <p className="text-white font-mono text-sm break-all">{referralLink}</p>
@@ -234,7 +237,7 @@ const ReferralDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced Stats with Withdrawal Balance */}
+        {/* Enhanced Stats with Referral Breakdown */}
         <div 
           ref={statsRef}
           className={`grid grid-cols-1 md:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${
@@ -252,20 +255,21 @@ const ReferralDashboard: React.FC = () => {
               actionText: 'Withdraw'
             },
             {
-              name: 'Total Earnings',
-              value: `₦${(stats.totalEarnings / 1000).toFixed(0)}K`,
-              icon: DollarSign,
+              name: 'Qualified Referrals',
+              value: stats.qualifiedReferrals.toString(),
+              icon: UserCheck,
               color: 'purple',
-              change: '+₦25K this month',
+              change: `₦${stats.qualifiedReferrals * 1000} earned`,
               action: () => setShowEarningsModal(true),
               actionText: 'View Details'
             },
             {
-              name: 'Pending Balance',
-              value: `₦${(stats.pendingBalance / 1000).toFixed(0)}K`,
-              icon: Clock,
+              name: 'Pending Referrals',
+              value: stats.pendingReferrals.toString(),
+              icon: UserPlus,
               color: 'orange',
-              change: 'Available in 7 days'
+              change: 'Need 3+ transactions',
+              description: 'Users with 1-2 transactions'
             },
             {
               name: 'Total Referrals',
@@ -304,9 +308,162 @@ const ReferralDashboard: React.FC = () => {
                     </AnimatedButton>
                   )}
                 </div>
+                {stat.description && (
+                  <p className="text-xs text-gray-400 mt-1">{stat.description}</p>
+                )}
               </div>
             );
           })}
+        </div>
+
+        {/* How Referral Earnings Work */}
+        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Zap className="w-5 h-5 text-yellow-400 mr-2" />
+            How Referral Earnings Work
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-900 rounded-lg p-4 text-center">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <UserPlus className="w-6 h-6 text-blue-400" />
+              </div>
+              <h4 className="text-white font-semibold mb-2">1. Refer a Friend</h4>
+              <p className="text-gray-400 text-sm">Share your referral link and get them to sign up</p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 text-center">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="w-6 h-6 text-orange-400" />
+              </div>
+              <h4 className="text-white font-semibold mb-2">2. They Trade</h4>
+              <p className="text-gray-400 text-sm">Your friend completes 3 or more transactions</p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 text-center">
+              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <DollarSign className="w-6 h-6 text-green-400" />
+              </div>
+              <h4 className="text-white font-semibold mb-2">3. Earn ₦1,000</h4>
+              <p className="text-gray-400 text-sm">Get your fixed bonus once they qualify</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Referral Progress */}
+        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center">
+              <Target className="w-5 h-5 text-purple-400 mr-2" />
+              Referral Progress
+            </h3>
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={isRefreshing}
+              size="sm"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Progress to Next Tier */}
+            {nextTier && (
+              <div className="bg-gray-900 rounded-lg p-4">
+                <h4 className="text-white font-semibold mb-3">Progress to {nextTier.name}</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Qualified Referrals:</span>
+                    <span className="text-white">{stats.qualifiedReferrals} / {nextTier.minReferrals}</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-purple-500 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min((stats.qualifiedReferrals / nextTier.minReferrals) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-gray-400 text-sm">
+                    {nextTier.minReferrals - stats.qualifiedReferrals} more qualified referrals to unlock {nextTier.name} tier
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Current Tier Benefits */}
+            {currentTier && (
+              <div className="bg-gray-900 rounded-lg p-4">
+                <h4 className="text-white font-semibold mb-3">Current Tier: {currentTier.name}</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Referral Bonus:</span>
+                    <span className="text-green-400 font-bold">₦{currentTier.bonus.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Tier Bonus:</span>
+                    <span className="text-purple-400 font-bold">₦{currentTier.tierBonus.toLocaleString()}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Tier bonus is a one-time reward for reaching this level
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Referrals */}
+        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center">
+              <Users className="w-5 h-5 text-blue-400 mr-2" />
+              Recent Referrals
+            </h3>
+            <div className="flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                size="sm"
+              />
+              <AnimatedButton
+                variant="secondary"
+                icon={Eye}
+                size="sm"
+                onClick={() => setShowEarningsModal(true)}
+              >
+                View All
+              </AnimatedButton>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {earnings.slice(0, 5).map((earning) => (
+              <div key={earning.id} className="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    earning.status === 'qualified' ? 'bg-green-500/20' : 'bg-orange-500/20'
+                  }`}>
+                    {earning.status === 'qualified' ? (
+                      <UserCheck className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <UserPlus className="w-4 h-4 text-orange-400" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{earning.fromUserName}</p>
+                    <p className="text-gray-400 text-sm">
+                      {earning.transactionCount} transaction{earning.transactionCount !== 1 ? 's' : ''}
+                      {earning.status === 'qualified' && ' • Qualified'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-bold ${
+                    earning.status === 'qualified' ? 'text-green-400' : 'text-gray-400'
+                  }`}>
+                    {earning.status === 'qualified' ? '₦1,000' : 'Pending'}
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    {new Date(earning.referredAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Withdrawal History Quick View */}
@@ -367,13 +524,10 @@ const ReferralDashboard: React.FC = () => {
             <div className="text-center py-8">
               <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-400">No withdrawals yet</p>
-              <p className="text-gray-500 text-sm">Start earning and withdraw your referral commissions</p>
+              <p className="text-gray-500 text-sm">Start earning and withdraw your referral bonuses</p>
             </div>
           )}
         </div>
-
-        {/* Rest of the existing referral dashboard content... */}
-        {/* Tier Progress, How It Works, etc. */}
 
         {/* Withdrawal Request Modal */}
         {showWithdrawalModal && (
@@ -403,6 +557,10 @@ const ReferralDashboard: React.FC = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-400">Available Balance:</span>
                   <span className="text-green-400 font-bold text-lg">₦{stats.availableBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-400">Qualified Referrals:</span>
+                  <span className="text-white">{stats.qualifiedReferrals} × ₦1,000</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Minimum Withdrawal:</span>
@@ -494,7 +652,7 @@ const ReferralDashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-white flex items-center">
                   <DollarSign className="w-6 h-6 text-purple-400 mr-2" />
-                  Earnings Details
+                  Referral Earnings Details
                 </h3>
                 <div className="flex space-x-3">
                   <RefreshButton 
@@ -516,42 +674,57 @@ const ReferralDashboard: React.FC = () => {
                   <div key={earning.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
-                          <span className="text-purple-400 font-bold text-sm">{earning.cryptocurrency}</span>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          earning.status === 'qualified' ? 'bg-green-500/20' : 'bg-orange-500/20'
+                        }`}>
+                          {earning.status === 'qualified' ? (
+                            <UserCheck className="w-4 h-4 text-green-400" />
+                          ) : (
+                            <UserPlus className="w-4 h-4 text-orange-400" />
+                          )}
                         </div>
                         <div>
                           <p className="text-white font-medium">{earning.fromUserName}</p>
-                          <p className="text-gray-400 text-sm">{earning.transactionId}</p>
+                          <p className="text-gray-400 text-sm">User ID: {earning.fromUserId}</p>
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full border ${
-                        earning.status === 'confirmed' 
+                        earning.status === 'qualified' 
                           ? 'text-green-400 bg-green-900/20 border-green-700'
-                          : 'text-yellow-400 bg-yellow-900/20 border-yellow-700'
+                          : 'text-orange-400 bg-orange-900/20 border-orange-700'
                       }`}>
-                        {earning.status}
+                        {earning.status === 'qualified' ? 'Qualified' : 'Pending'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-400">Transaction Amount:</span>
-                        <p className="text-white font-medium">₦{earning.transactionAmount.toLocaleString()}</p>
+                        <span className="text-gray-400">Transaction Count:</span>
+                        <p className="text-white font-medium">{earning.transactionCount} / 3 required</p>
                       </div>
                       <div>
-                        <span className="text-gray-400">Commission ({earning.commissionRate}%):</span>
-                        <p className="text-green-400 font-bold">₦{earning.commissionAmount.toLocaleString()}</p>
+                        <span className="text-gray-400">Bonus Amount:</span>
+                        <p className={`font-bold ${earning.status === 'qualified' ? 'text-green-400' : 'text-gray-400'}`}>
+                          ₦{earning.bonusAmount.toLocaleString()}
+                        </p>
                       </div>
                       <div>
-                        <span className="text-gray-400">Earned Date:</span>
-                        <p className="text-white">{new Date(earning.earnedAt).toLocaleDateString()}</p>
+                        <span className="text-gray-400">Referred Date:</span>
+                        <p className="text-white">{new Date(earning.referredAt).toLocaleDateString()}</p>
                       </div>
-                      {earning.paidAt && (
+                      {earning.qualifiedAt && (
                         <div>
-                          <span className="text-gray-400">Paid Date:</span>
-                          <p className="text-white">{new Date(earning.paidAt).toLocaleDateString()}</p>
+                          <span className="text-gray-400">Qualified Date:</span>
+                          <p className="text-white">{new Date(earning.qualifiedAt).toLocaleDateString()}</p>
                         </div>
                       )}
                     </div>
+                    {earning.status === 'pending' && (
+                      <div className="mt-3 p-2 bg-orange-900/20 border border-orange-700 rounded">
+                        <p className="text-orange-400 text-sm">
+                          User needs {3 - earning.transactionCount} more transaction{3 - earning.transactionCount !== 1 ? 's' : ''} to qualify
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -584,7 +757,7 @@ const ReferralDashboard: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                {withdrawalHistory.map((withdrawal) => (
+                {withdrawalHistory.length > 0 ? withdrawalHistory.map((withdrawal) => (
                   <div key={withdrawal.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
                     <div className="flex items-center justify-between mb-3">
                       <div>
@@ -633,7 +806,13 @@ const ReferralDashboard: React.FC = () => {
                       </div>
                     )}
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-400">No withdrawal history</p>
+                    <p className="text-gray-500 text-sm">Your withdrawal requests will appear here</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
