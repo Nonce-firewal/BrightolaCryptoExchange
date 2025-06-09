@@ -274,9 +274,10 @@ const LandingPage: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center">
+          {/* Mobile Layout - Centered */}
+          <div className="lg:hidden text-center">
             {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight hero-text">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight hero-text">
               Buy and Sell
               <br />
               <span className="gradient-text">Cryptocurrency</span>
@@ -357,6 +358,146 @@ const LandingPage: React.FC = () => {
             <p className="text-xl text-gray-300 max-w-2xl mx-auto hero-subtitle">
               Depositing and withdrawing from your trading account just got easier with Brightola.
             </p>
+          </div>
+
+          {/* Desktop Layout - Side by Side */}
+          <div className="hidden lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
+            {/* Left Column - Text Content */}
+            <div className="space-y-8">
+              {/* Main Heading */}
+              <h1 className="text-5xl xl:text-6xl font-bold leading-tight hero-text">
+                Buy and Sell
+                <br />
+                <span className="gradient-text">Cryptocurrency</span>
+                <br />
+                easily with Bank
+                <br />
+                Transfer
+              </h1>
+              
+              {/* Subtitle */}
+              <p className="text-xl text-gray-300 max-w-lg hero-subtitle">
+                Depositing and withdrawing from your trading account just got easier with Brightola.
+              </p>
+
+              {/* CTA Button */}
+              <div className="hero-cta">
+                <Link
+                  to="/register"
+                  className="inline-block bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                >
+                  Trade Crypto
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column - Phone Mockup */}
+            <div className="flex justify-center lg:justify-end hero-phone">
+              <div className="relative floating-animation">
+                {/* Phone Frame - Full phone for desktop */}
+                <div className="w-80 h-[600px] bg-gray-800 rounded-[3rem] p-3 shadow-2xl border-4 border-gray-700 overflow-hidden">
+                  <div className="w-full h-full bg-gray-900 rounded-[2.5rem] overflow-hidden relative">
+                    {/* Status Bar */}
+                    <div className="flex justify-between items-center px-6 py-3 text-sm text-white bg-gray-900">
+                      <span>08:31</span>
+                      <div className="text-center text-xs text-gray-400">
+                        brightola.com.ng
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="flex space-x-1">
+                          <div className="w-1 h-1 bg-white rounded-full"></div>
+                          <div className="w-1 h-1 bg-white rounded-full"></div>
+                          <div className="w-1 h-1 bg-white rounded-full"></div>
+                        </div>
+                        <div className="w-6 h-3 border border-white rounded-sm">
+                          <div className="w-4 h-2 bg-green-500 rounded-sm m-0.5"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* App Header */}
+                    <div className="bg-gray-900 px-6 py-4 flex justify-between items-center border-b border-gray-800">
+                      <div className="text-xl font-bold">
+                        <span className="text-white">BRIGHTOLA</span>
+                        <span className="text-orange-500">X</span>
+                      </div>
+                      <Menu className="w-6 h-6 text-white" />
+                    </div>
+
+                    {/* Main Content - Dashboard */}
+                    <div className="bg-white h-full px-6 py-6">
+                      <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-900 mb-1">
+                          What's good,
+                        </h2>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Toluwalope
+                        </h2>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex space-x-3 mb-8">
+                        <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold">
+                          Sell
+                        </button>
+                        <button className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
+                          Buy
+                        </button>
+                      </div>
+
+                      {/* Portfolio Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Portfolio</h3>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-600">Total Balance</span>
+                            <span className="text-2xl font-bold text-gray-900">₦850,000</span>
+                          </div>
+                          <div className="text-green-500 text-sm">+15.3% this month</div>
+                        </div>
+
+                        {/* Recent Transactions */}
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-gray-900">Recent</h4>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center py-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                  <span className="text-orange-600 text-xs font-bold">BTC</span>
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Bitcoin</div>
+                                  <div className="text-xs text-gray-500">Sold</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900">₦125,000</div>
+                                <div className="text-xs text-green-500">+2.5%</div>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center py-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-blue-600 text-xs font-bold">ETH</span>
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Ethereum</div>
+                                  <div className="text-xs text-gray-500">Bought</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900">₦75,000</div>
+                                <div className="text-xs text-red-500">-1.2%</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
