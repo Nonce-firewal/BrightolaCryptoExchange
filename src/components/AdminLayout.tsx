@@ -11,7 +11,9 @@ import {
   LogOut,
   User,
   Menu,
-  X
+  X,
+  BarChart3,
+  Users
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -25,8 +27,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Transactions', href: '/admin/transactions', icon: ArrowLeftRight },
     { name: 'KYC Management', href: '/admin/kyc', icon: Shield },
+    { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Coins & Networks', href: '/admin/coins', icon: Coins },
     { name: 'Custom Tokens', href: '/admin/custom-tokens', icon: Sparkles },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
