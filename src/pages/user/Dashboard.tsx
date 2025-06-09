@@ -57,8 +57,8 @@ const Dashboard: React.FC = () => {
       icon: AlertCircle,
       text: 'Not Submitted',
       action: 'Complete KYC',
-      bgColor: 'bg-gray-800',
-      borderColor: 'border-gray-700',
+      bgGradient: 'bg-gradient-to-br from-gray-800/80 via-gray-700/60 to-gray-800/80',
+      borderColor: 'border-gray-600/50',
       textColor: 'text-gray-300'
     },
     'pending': {
@@ -66,8 +66,8 @@ const Dashboard: React.FC = () => {
       icon: Clock,
       text: 'Under Review',
       action: 'View Status',
-      bgColor: 'bg-yellow-900/50',
-      borderColor: 'border-yellow-700',
+      bgGradient: 'bg-gradient-to-br from-yellow-900/40 via-yellow-800/30 to-amber-900/40',
+      borderColor: 'border-yellow-600/40',
       textColor: 'text-yellow-300'
     },
     'approved': {
@@ -75,8 +75,8 @@ const Dashboard: React.FC = () => {
       icon: CheckCircle,
       text: 'Verified',
       action: 'View Details',
-      bgColor: 'bg-green-900/50',
-      borderColor: 'border-green-700',
+      bgGradient: 'bg-gradient-to-br from-green-900/40 via-emerald-800/30 to-green-900/40',
+      borderColor: 'border-green-600/40',
       textColor: 'text-green-300'
     },
     'rejected': {
@@ -84,8 +84,8 @@ const Dashboard: React.FC = () => {
       icon: AlertCircle,
       text: 'Rejected',
       action: 'Resubmit',
-      bgColor: 'bg-red-900/50',
-      borderColor: 'border-red-700',
+      bgGradient: 'bg-gradient-to-br from-red-900/40 via-red-800/30 to-red-900/40',
+      borderColor: 'border-red-600/40',
       textColor: 'text-red-300'
     }
   };
@@ -100,7 +100,8 @@ const Dashboard: React.FC = () => {
       change: '+2.1%',
       changeType: 'increase' as const,
       icon: Activity,
-      color: 'blue'
+      color: 'blue',
+      bgGradient: 'bg-gradient-to-br from-blue-900/40 via-blue-800/30 to-indigo-900/40'
     },
     {
       name: 'Portfolio Value',
@@ -108,7 +109,8 @@ const Dashboard: React.FC = () => {
       change: '+15.3%',
       changeType: 'increase' as const,
       icon: Wallet,
-      color: 'green'
+      color: 'green',
+      bgGradient: 'bg-gradient-to-br from-green-900/40 via-emerald-800/30 to-green-900/40'
     },
     {
       name: 'Active Orders',
@@ -116,7 +118,8 @@ const Dashboard: React.FC = () => {
       change: '-1',
       changeType: 'decrease' as const,
       icon: TrendingUp,
-      color: 'purple'
+      color: 'purple',
+      bgGradient: 'bg-gradient-to-br from-purple-900/40 via-purple-800/30 to-violet-900/40'
     }
   ];
 
@@ -131,10 +134,10 @@ const Dashboard: React.FC = () => {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        {/* Header with enhanced animations */}
+        {/* Header with enhanced animations and gradient */}
         <div 
           ref={headerRef}
-          className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 transform ${
+          className={`bg-gradient-to-br from-gray-800/90 via-gray-700/80 to-gray-800/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-600/50 p-6 transition-all duration-1000 transform ${
             headerVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
           }`}
         >
@@ -206,10 +209,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced KYC Status Alert */}
+        {/* Enhanced KYC Status Alert with gradient */}
         {user?.kycStatus !== 'approved' && (
           <AnimatedCard 
-            className={`${kycConfig.bgColor} border ${kycConfig.borderColor} rounded-lg p-4 flex items-center justify-between`}
+            className={`${kycConfig.bgGradient} backdrop-blur-sm border ${kycConfig.borderColor} rounded-lg p-4 flex items-center justify-between`}
             delay={200}
             hoverEffect="glow"
           >
@@ -238,7 +241,7 @@ const Dashboard: React.FC = () => {
           </AnimatedCard>
         )}
 
-        {/* Enhanced Stats with staggered animation */}
+        {/* Enhanced Stats with staggered animation and gradients */}
         <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
@@ -246,7 +249,7 @@ const Dashboard: React.FC = () => {
             return (
               <AnimatedCard
                 key={stat.name}
-                className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 group cursor-pointer transition-all duration-500 ${
+                className={`${stat.bgGradient} backdrop-blur-sm rounded-xl shadow-sm border border-gray-600/50 p-6 group cursor-pointer transition-all duration-500 ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 delay={index * 150}
@@ -283,7 +286,7 @@ const Dashboard: React.FC = () => {
 
         {/* Enhanced Market Overview */}
         <AnimatedCard 
-          className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 ${
+          className={`bg-gradient-to-br from-gray-800/90 via-gray-700/80 to-gray-800/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-600/50 p-6 transition-all duration-1000 ${
             marketVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
           delay={700}
