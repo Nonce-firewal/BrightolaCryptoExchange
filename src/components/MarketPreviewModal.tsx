@@ -127,7 +127,7 @@ const MarketPreviewModal: React.FC<MarketPreviewModalProps> = ({ isOpen, onClose
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           {loading ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg\" text="Loading market data..." />
+              <LoadingSpinner size="lg" text="Loading market data..." />
             </div>
           ) : (
             <div className="space-y-4">
@@ -206,22 +206,16 @@ const MarketPreviewModal: React.FC<MarketPreviewModalProps> = ({ isOpen, onClose
                     <div className="text-sm text-gray-400">Losers</div>
                   </div>
                 </div>
+                
+                {/* Last Updated Info */}
+                <div className="mt-4 text-center">
+                  <div className="text-sm text-gray-400">
+                    Last updated: {new Date().toLocaleTimeString()}
+                  </div>
+                </div>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="flex justify-between items-center p-6 border-t border-gray-700">
-          <div className="text-sm text-gray-400">
-            Last updated: {new Date().toLocaleTimeString()}
-          </div>
-          <AnimatedButton
-            variant="primary"
-            onClick={onClose}
-          >
-            Close
-          </AnimatedButton>
         </div>
       </div>
 
