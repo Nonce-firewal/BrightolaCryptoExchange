@@ -967,7 +967,7 @@ const BuyCrypto: React.FC = () => {
                     
                     <div className="flex items-center justify-center mt-4 space-x-2">
                       <Zap className="w-5 h-5 text-orange-400 animate-pulse" />
-                      <span className="text-orange-400 font-medium">Coming in Q2 2024</span>
+                      <span className="text-orange-400 font-medium">Coming Soon</span>
                     </div>
                   </div>
                   
