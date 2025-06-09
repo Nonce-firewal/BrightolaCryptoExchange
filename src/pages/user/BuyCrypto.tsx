@@ -961,7 +961,7 @@ const BuyCrypto: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-blue-500/5 animate-shimmer"></div>
                     <p className="text-gray-300 relative z-10">
                       {comingSoonMethod === 'card' 
-                        ? 'We're currently integrating our card payment system to provide you with a seamless experience. This feature will be available very soon!' 
+                        ? 'We\'re currently integrating our card payment system to provide you with a seamless experience. This feature will be available very soon!' 
                         : 'Our USSD payment option is under development and will be available shortly. This will allow you to make payments directly from your phone without internet access.'}
                     </p>
                     
