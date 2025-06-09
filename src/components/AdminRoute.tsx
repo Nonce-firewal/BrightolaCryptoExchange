@@ -12,7 +12,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 
   // Redirect to admin login if not authenticated or not admin
   if (!isAuthenticated || !isAdmin) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/admin/login\" replace />;
   }
 
   // Redirect to admin dashboard if trying to access landing page while logged in as admin

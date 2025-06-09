@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // Redirect to login if not authenticated or if admin trying to access user routes
   if (!isAuthenticated || isAdmin) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login\" replace />;
   }
 
   // Redirect to dashboard if trying to access landing page while logged in
