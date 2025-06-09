@@ -10,7 +10,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { isAuthenticated, isAdmin } = useAuth();
 
   if (!isAuthenticated || !isAdmin) {
-    return <Navigate to="/admin/login\" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;
