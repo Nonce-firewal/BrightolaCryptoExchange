@@ -25,7 +25,8 @@ import {
   EyeOff,
   MessageCircle,
   Info,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -42,6 +43,8 @@ const BuyCrypto: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const [comingSoonMethod, setComingSoonMethod] = useState<'card' | 'ussd'>('card');
   
   // Payment proof states
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -85,6 +88,19 @@ const BuyCrypto: React.FC = () => {
 
     if (paymentMethod === 'bank_transfer' && !selectedBank) {
       alert('Please select a bank account for payment.');
+      return;
+    }
+
+    // Show coming soon modal for card and USSD payment methods
+    if (paymentMethod === 'card') {
+      setComingSoonMethod('card');
+      setShowComingSoonModal(true);
+      return;
+    }
+
+    if (paymentMethod === 'ussd') {
+      setComingSoonMethod('ussd');
+      setShowComingSoonModal(true);
       return;
     }
 
@@ -139,6 +155,15 @@ const BuyCrypto: React.FC = () => {
     }
     
     setPaymentProof(file);
+  };
+
+  const handlePaymentMethodSelect = (methodId: string) => {
+    if (methodId === 'card' || methodId === 'ussd') {
+      setComingSoonMethod(methodId as 'card' | 'ussd');
+      setShowComingSoonModal(true);
+    } else {
+      setPaymentMethod(methodId);
+    }
   };
 
   const paymentMethods = [
@@ -627,7 +652,7 @@ const BuyCrypto: React.FC = () => {
                       return (
                         <button
                           key={method.id}
-                          onClick={() => !isDisabled && setPaymentMethod(method.id)}
+                          onClick={() => !isDisabled && handlePaymentMethodSelect(method.id)}
                           disabled={isDisabled}
                           className={`w-full p-4 rounded-lg border transition-all duration-300 transform hover:scale-[1.02] ${
                             paymentMethod === method.id
@@ -668,7 +693,7 @@ const BuyCrypto: React.FC = () => {
                         <button
                           key={bank.id}
                           onClick={() => setSelectedBank(bank.id)}
-                          className={`w-full p-4 rounded-lg border transition-all duration-300 transform hover:scale-[1.02] ${
+                          className={`w-full p-3 rounded-lg border transition-all duration-300 transform hover:scale-[1.02] ${
                             selectedBank === bank.id
                               ? 'border-green-500 bg-green-500/20'
                               : 'border-gray-700 bg-gray-900 hover:border-gray-600'
@@ -909,6 +934,55 @@ const BuyCrypto: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Coming Soon Modal for Card and USSD Payment */}
+        {showComingSoonModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md border border-gray-700 animate-comingSoonModal">
+              <div className="relative">
+                {/* Animated elements */}
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-orange-500/20 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-blue-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+                
+                <div className="text-center relative z-10">
+                  <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                    {comingSoonMethod === 'card' ? (
+                      <CreditCard className="w-10 h-10 text-white" />
+                    ) : (
+                      <Smartphone className="w-10 h-10 text-white" />
+                    )}
+                  </div>
+                  
+                  <h2 className="text-2xl font-bold text-white mb-4">
+                    {comingSoonMethod === 'card' ? 'Card Payment Coming Soon!' : 'USSD Payment Coming Soon!'}
+                  </h2>
+                  
+                  <div className="bg-gray-900 rounded-lg p-4 mb-6 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-blue-500/5 animate-shimmer"></div>
+                    <p className="text-gray-300 relative z-10">
+                      {comingSoonMethod === 'card' 
+                        ? 'We're currently integrating our card payment system to provide you with a seamless experience. This feature will be available very soon!' 
+                        : 'Our USSD payment option is under development and will be available shortly. This will allow you to make payments directly from your phone without internet access.'}
+                    </p>
+                    
+                    <div className="flex items-center justify-center mt-4 space-x-2">
+                      <Zap className="w-5 h-5 text-orange-400 animate-pulse" />
+                      <span className="text-orange-400 font-medium">Coming in Q2 2024</span>
+                    </div>
+                  </div>
+                  
+                  <AnimatedButton
+                    variant="primary"
+                    onClick={() => setShowComingSoonModal(false)}
+                    className="w-full"
+                  >
+                    Back to Payment Methods
+                  </AnimatedButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style jsx>{`
@@ -922,8 +996,27 @@ const BuyCrypto: React.FC = () => {
             transform: scale(1);
           }
         }
+        
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
+          }
+        }
+        
         .animate-fadeInScale {
           animation: fadeInScale 0.6s ease-out;
+        }
+        
+        .animate-comingSoonModal {
+          animation: fadeInScale 0.5s ease-out;
+        }
+        
+        .animate-shimmer {
+          background-size: 1000px 100%;
+          animation: shimmer 8s infinite linear;
         }
       `}</style>
     </Layout>
