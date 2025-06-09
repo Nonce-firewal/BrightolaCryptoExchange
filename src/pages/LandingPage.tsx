@@ -126,6 +126,86 @@ const LandingPage: React.FC = () => {
           }
         }
 
+        @keyframes slideInFromTop {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInFromLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInFromRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes menuSlideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes hamburgerTop {
+          0% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(6px) rotate(0deg); }
+          100% { transform: translateY(6px) rotate(45deg); }
+        }
+
+        @keyframes hamburgerMiddle {
+          0% { opacity: 1; }
+          50% { opacity: 0; }
+          100% { opacity: 0; }
+        }
+
+        @keyframes hamburgerBottom {
+          0% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-6px) rotate(0deg); }
+          100% { transform: translateY(-6px) rotate(-45deg); }
+        }
+
+        @keyframes hamburgerTopReverse {
+          0% { transform: translateY(6px) rotate(45deg); }
+          50% { transform: translateY(6px) rotate(0deg); }
+          100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        @keyframes hamburgerMiddleReverse {
+          0% { opacity: 0; }
+          50% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+
+        @keyframes hamburgerBottomReverse {
+          0% { transform: translateY(-6px) rotate(-45deg); }
+          50% { transform: translateY(-6px) rotate(0deg); }
+          100% { transform: translateY(0) rotate(0deg); }
+        }
+
         .fade-in-up {
           opacity: 0;
           transform: translateY(30px);
@@ -176,12 +256,12 @@ const LandingPage: React.FC = () => {
           animation: fadeInUp 1s ease-out 0.3s both;
         }
 
-        .hero-phone {
-          animation: fadeInScale 1s ease-out 0.6s both;
+        .hero-content {
+          animation: fadeInLeft 1s ease-out 0.6s both;
         }
 
-        .hero-subtitle {
-          animation: fadeInUp 1s ease-out 0.9s both;
+        .hero-phone {
+          animation: fadeInRight 1s ease-out 0.9s both;
         }
 
         .floating-animation {
@@ -206,14 +286,160 @@ const LandingPage: React.FC = () => {
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
+
+        .nav-item {
+          animation: slideInFromTop 0.6s ease-out both;
+        }
+
+        .nav-item:nth-child(1) { animation-delay: 0.1s; }
+        .nav-item:nth-child(2) { animation-delay: 0.2s; }
+        .nav-item:nth-child(3) { animation-delay: 0.3s; }
+
+        .nav-button {
+          animation: slideInFromRight 0.6s ease-out both;
+        }
+
+        .nav-button:nth-child(1) { animation-delay: 0.4s; }
+        .nav-button:nth-child(2) { animation-delay: 0.5s; }
+
+        .mobile-menu {
+          animation: menuSlideDown 0.3s ease-out;
+        }
+
+        .mobile-menu-item {
+          animation: slideInFromLeft 0.4s ease-out both;
+        }
+
+        .mobile-menu-item:nth-child(1) { animation-delay: 0.1s; }
+        .mobile-menu-item:nth-child(2) { animation-delay: 0.2s; }
+        .mobile-menu-item:nth-child(3) { animation-delay: 0.3s; }
+        .mobile-menu-item:nth-child(4) { animation-delay: 0.4s; }
+
+        .hamburger-line {
+          transition: all 0.3s ease;
+        }
+
+        .hamburger-open .hamburger-line:nth-child(1) {
+          animation: hamburgerTop 0.3s ease forwards;
+        }
+
+        .hamburger-open .hamburger-line:nth-child(2) {
+          animation: hamburgerMiddle 0.3s ease forwards;
+        }
+
+        .hamburger-open .hamburger-line:nth-child(3) {
+          animation: hamburgerBottom 0.3s ease forwards;
+        }
+
+        .hamburger-close .hamburger-line:nth-child(1) {
+          animation: hamburgerTopReverse 0.3s ease forwards;
+        }
+
+        .hamburger-close .hamburger-line:nth-child(2) {
+          animation: hamburgerMiddleReverse 0.3s ease forwards;
+        }
+
+        .hamburger-close .hamburger-line:nth-child(3) {
+          animation: hamburgerBottomReverse 0.3s ease forwards;
+        }
+
+        .logo-animation {
+          animation: fadeInLeft 0.8s ease-out;
+        }
+
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4rem;
+          align-items: center;
+          min-height: 80vh;
+        }
+
+        @media (max-width: 1024px) {
+          .hero-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            text-align: center;
+          }
+        }
+
+        .hero-content-section {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-start;
+        }
+
+        @media (max-width: 1024px) {
+          .hero-content-section {
+            align-items: center;
+            text-align: center;
+          }
+        }
+
+        .hero-visual-section {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          position: relative;
+        }
+
+        .phone-container {
+          position: relative;
+          z-index: 10;
+        }
+
+        .hero-bg-elements {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 120%;
+          height: 120%;
+          z-index: 1;
+        }
+
+        .bg-circle {
+          position: absolute;
+          border-radius: 50%;
+          opacity: 0.1;
+        }
+
+        .bg-circle-1 {
+          width: 300px;
+          height: 300px;
+          background: linear-gradient(135deg, #f97316, #ea580c);
+          top: 20%;
+          right: 10%;
+          animation: float 8s ease-in-out infinite;
+        }
+
+        .bg-circle-2 {
+          width: 200px;
+          height: 200px;
+          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          bottom: 20%;
+          left: 10%;
+          animation: float 6s ease-in-out infinite reverse;
+        }
+
+        .bg-circle-3 {
+          width: 150px;
+          height: 150px;
+          background: linear-gradient(135deg, #10b981, #059669);
+          top: 60%;
+          right: 30%;
+          animation: float 10s ease-in-out infinite;
+          animation-delay: -2s;
+        }
       `}</style>
 
       {/* Header */}
       <header className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 z-50 fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <div className="text-2xl font-bold">
+            <div className="flex items-center logo-animation">
+              <div className="text-2xl font-bold transition-all duration-300 hover:scale-105 cursor-pointer">
                 <span className="text-white">BRIGHTOLA</span>
                 <span className="text-orange-500">X</span>
               </div>
@@ -221,20 +447,26 @@ const LandingPage: React.FC = () => {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-              <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">How It Works</a>
+              <a href="#features" className="nav-item text-gray-300 hover:text-white transition-all duration-300 hover:scale-105 relative group">
+                Features
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="#how-it-works" className="nav-item text-gray-300 hover:text-white transition-all duration-300 hover:scale-105 relative group">
+                How It Works
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 transition-all duration-300 group-hover:w-full"></span>
+              </a>
             </nav>
 
             <div className="hidden md:flex space-x-4">
               <Link
                 to="/login"
-                className="text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-colors"
+                className="nav-button text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-all duration-300 hover:bg-gray-800 hover:scale-105"
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                className="nav-button bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-all duration-300 hover:scale-105 hover:shadow-lg transform"
               >
                 Get Started
               </Link>
@@ -243,21 +475,25 @@ const LandingPage: React.FC = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-300"
+              className={`md:hidden text-gray-300 w-6 h-6 flex flex-col justify-center items-center space-y-1 ${
+                mobileMenuOpen ? 'hamburger-open' : 'hamburger-close'
+              }`}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <span className="hamburger-line w-6 h-0.5 bg-current block"></span>
+              <span className="hamburger-line w-6 h-0.5 bg-current block"></span>
+              <span className="hamburger-line w-6 h-0.5 bg-current block"></span>
             </button>
           </div>
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-800">
+            <div className="md:hidden py-4 border-t border-gray-800 mobile-menu">
               <nav className="flex flex-col space-y-4">
-                <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-                <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">How It Works</a>
+                <a href="#features" className="mobile-menu-item text-gray-300 hover:text-white transition-all duration-300 hover:translate-x-2">Features</a>
+                <a href="#how-it-works" className="mobile-menu-item text-gray-300 hover:text-white transition-all duration-300 hover:translate-x-2">How It Works</a>
                 <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
-                  <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link>
-                  <Link to="/register" className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors text-center">Get Started</Link>
+                  <Link to="/login" className="mobile-menu-item text-gray-300 hover:text-white transition-all duration-300 hover:translate-x-2">Login</Link>
+                  <Link to="/register" className="mobile-menu-item bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-all duration-300 text-center hover:scale-105">Get Started</Link>
                 </div>
               </nav>
             </div>
@@ -274,89 +510,142 @@ const LandingPage: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center">
-            {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight hero-text">
-              Buy and Sell
-              <br />
-              <span className="gradient-text">Cryptocurrency</span>
-              <br />
-              easily with Bank
-              <br />
-              Transfer
-            </h1>
-            
-            {/* CTA Button */}
-            <Link
-              to="/register"
-              className="inline-block bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl mb-16 hero-cta"
-            >
-              Trade Crypto
-            </Link>
+          <div className="hero-grid">
+            {/* Content Section */}
+            <div className="hero-content-section hero-content">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                Buy and Sell
+                <br />
+                <span className="gradient-text">Cryptocurrency</span>
+                <br />
+                easily with Bank
+                <br />
+                Transfer
+              </h1>
+              
+              <p className="text-xl text-gray-300 mb-8 max-w-lg">
+                Depositing and withdrawing from your trading account just got easier with Brightola.
+              </p>
 
-            {/* Half Phone Mockup - Only showing top portion */}
-            <div className="flex justify-center mb-16 hero-phone">
-              <div className="relative floating-animation">
-                {/* Phone Frame - Only top half visible */}
-                <div className="w-80 h-80 bg-gray-800 rounded-t-[3rem] p-3 shadow-2xl border-4 border-gray-700 border-b-0 overflow-hidden">
-                  <div className="w-full h-full bg-gray-900 rounded-t-[2.5rem] overflow-hidden relative">
-                    {/* Status Bar */}
-                    <div className="flex justify-between items-center px-6 py-3 text-sm text-white bg-gray-900">
-                      <span>08:31</span>
-                      <div className="text-center text-xs text-gray-400">
-                        brightola.com.ng
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="flex space-x-1">
-                          <div className="w-1 h-1 bg-white rounded-full"></div>
-                          <div className="w-1 h-1 bg-white rounded-full"></div>
-                          <div className="w-1 h-1 bg-white rounded-full"></div>
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <Link
+                  to="/register"
+                  className="inline-flex items-center justify-center bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                >
+                  Trade Crypto
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+                <a
+                  href="#features"
+                  className="inline-flex items-center justify-center border-2 border-orange-500 text-orange-500 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 transform hover:scale-105"
+                >
+                  Learn More
+                </a>
+              </div>
+
+              <div className="flex items-center space-x-6 text-sm text-gray-400">
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  Secure & Licensed
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  24/7 Support
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  Instant Transfers
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Section */}
+            <div className="hero-visual-section hero-phone">
+              {/* Background decorative elements */}
+              <div className="hero-bg-elements">
+                <div className="bg-circle bg-circle-1"></div>
+                <div className="bg-circle bg-circle-2"></div>
+                <div className="bg-circle bg-circle-3"></div>
+              </div>
+
+              {/* Phone Mockup */}
+              <div className="phone-container">
+                <div className="relative floating-animation">
+                  {/* Phone Frame */}
+                  <div className="w-80 h-[600px] bg-gray-800 rounded-[3rem] p-3 shadow-2xl border-4 border-gray-700 overflow-hidden">
+                    <div className="w-full h-full bg-gray-900 rounded-[2.5rem] overflow-hidden relative">
+                      {/* Status Bar */}
+                      <div className="flex justify-between items-center px-6 py-3 text-sm text-white bg-gray-900">
+                        <span>08:31</span>
+                        <div className="text-center text-xs text-gray-400">
+                          brightola.com.ng
                         </div>
-                        <div className="w-6 h-3 border border-white rounded-sm">
-                          <div className="w-4 h-2 bg-green-500 rounded-sm m-0.5"></div>
+                        <div className="flex items-center space-x-1">
+                          <div className="flex space-x-1">
+                            <div className="w-1 h-1 bg-white rounded-full"></div>
+                            <div className="w-1 h-1 bg-white rounded-full"></div>
+                            <div className="w-1 h-1 bg-white rounded-full"></div>
+                          </div>
+                          <div className="w-6 h-3 border border-white rounded-sm">
+                            <div className="w-4 h-2 bg-green-500 rounded-sm m-0.5"></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* App Header */}
-                    <div className="bg-gray-900 px-6 py-4 flex justify-between items-center border-b border-gray-800">
-                      <div className="text-xl font-bold">
-                        <span className="text-white">BRIGHTOLA</span>
-                        <span className="text-orange-500">X</span>
-                      </div>
-                      <Menu className="w-6 h-6 text-white" />
-                    </div>
-
-                    {/* Main Content - Dashboard */}
-                    <div className="bg-white h-full px-6 py-6">
-                      <div className="mb-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-1">
-                          What's good,
-                        </h2>
-                        <h2 className="text-xl font-bold text-gray-900">
-                          Toluwalope
-                        </h2>
+                      {/* App Header */}
+                      <div className="bg-gray-900 px-6 py-4 flex justify-between items-center border-b border-gray-800">
+                        <div className="text-xl font-bold">
+                          <span className="text-white">BRIGHTOLA</span>
+                          <span className="text-orange-500">X</span>
+                        </div>
+                        <Menu className="w-6 h-6 text-white" />
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex space-x-3">
-                        <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold">
-                          Sell
-                        </button>
-                        <button className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
-                          Buy
-                        </button>
+                      {/* Main Content - Dashboard */}
+                      <div className="bg-white h-full px-6 py-6">
+                        <div className="mb-6">
+                          <h2 className="text-xl font-bold text-gray-900 mb-1">
+                            What's good,
+                          </h2>
+                          <h2 className="text-xl font-bold text-gray-900">
+                            Toluwalope
+                          </h2>
+                        </div>
+
+                        {/* Balance Card */}
+                        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-4 mb-6 text-white">
+                          <p className="text-sm opacity-90">Total Balance</p>
+                          <p className="text-2xl font-bold">₦850,000</p>
+                          <p className="text-sm opacity-90">+15.3% this month</p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-3 mb-6">
+                          <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold">
+                            Sell
+                          </button>
+                          <button className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
+                            Buy
+                          </button>
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-gray-100 rounded-lg p-3">
+                            <p className="text-xs text-gray-600">Today's Profit</p>
+                            <p className="text-lg font-bold text-green-600">+₦12,500</p>
+                          </div>
+                          <div className="bg-gray-100 rounded-lg p-3">
+                            <p className="text-xs text-gray-600">Active Orders</p>
+                            <p className="text-lg font-bold text-blue-600">3</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Subtitle */}
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto hero-subtitle">
-              Depositing and withdrawing from your trading account just got easier with Brightola.
-            </p>
           </div>
         </div>
       </section>
