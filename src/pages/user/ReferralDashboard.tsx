@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
+import { useReferral } from '../../contexts/ReferralContext';
 import { 
   Users, 
   Gift, 
@@ -13,21 +14,45 @@ import {
   ExternalLink,
   CheckCircle,
   Clock,
-  Target
+  Target,
+  Wallet,
+  ArrowUpRight,
+  Building,
+  AlertCircle,
+  Download,
+  Eye,
+  Calendar,
+  Banknote,
+  CreditCard,
+  X,
+  Send
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 
 const ReferralDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { stats, earnings, requestWithdrawal, getWithdrawalHistory } = useReferral();
   const [copied, setCopied] = useState(false);
   const [selectedTier, setSelectedTier] = useState(1);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [showEarningsModal, setShowEarningsModal] = useState(false);
+  const [showWithdrawalHistory, setShowWithdrawalHistory] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [bankDetails, setBankDetails] = useState({
+    accountName: '',
+    accountNumber: '',
+    bankName: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
   const { ref: referralsRef, isVisible: referralsVisible } = useScrollAnimation();
 
   const referralLink = `https://brightola.com/register?ref=${user?.referralCode}`;
+  const withdrawalHistory = getWithdrawalHistory();
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);
@@ -47,14 +72,37 @@ const ReferralDashboard: React.FC = () => {
     }
   };
 
-  // Mock referral data
-  const referralStats = {
-    totalReferrals: 12,
-    activeReferrals: 8,
-    totalEarnings: 125000,
-    pendingEarnings: 25000,
-    currentTier: 2,
-    nextTierProgress: 60
+  const handleWithdrawalRequest = async () => {
+    setError('');
+    
+    if (!withdrawalAmount || parseFloat(withdrawalAmount) < 2000) {
+      setError('Minimum withdrawal amount is ₦2,000');
+      return;
+    }
+
+    if (parseFloat(withdrawalAmount) > stats.availableBalance) {
+      setError('Insufficient available balance');
+      return;
+    }
+
+    if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
+      setError('Please fill in all bank details');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      await requestWithdrawal(parseFloat(withdrawalAmount), bankDetails);
+      setShowWithdrawalModal(false);
+      setWithdrawalAmount('');
+      setBankDetails({ accountName: '', accountNumber: '', bankName: '' });
+      alert('Withdrawal request submitted successfully! It will be processed within 24-48 hours.');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const referralTiers = [
@@ -96,47 +144,8 @@ const ReferralDashboard: React.FC = () => {
     }
   ];
 
-  const recentReferrals = [
-    {
-      id: 1,
-      name: 'John D.',
-      email: 'john***@gmail.com',
-      status: 'active',
-      joinDate: '2024-01-15',
-      earnings: 15000,
-      transactions: 5
-    },
-    {
-      id: 2,
-      name: 'Sarah M.',
-      email: 'sarah***@yahoo.com',
-      status: 'pending',
-      joinDate: '2024-01-14',
-      earnings: 0,
-      transactions: 0
-    },
-    {
-      id: 3,
-      name: 'Mike O.',
-      email: 'mike***@gmail.com',
-      status: 'active',
-      joinDate: '2024-01-13',
-      earnings: 25000,
-      transactions: 8
-    },
-    {
-      id: 4,
-      name: 'Grace A.',
-      email: 'grace***@outlook.com',
-      status: 'active',
-      joinDate: '2024-01-12',
-      earnings: 12000,
-      transactions: 3
-    }
-  ];
-
-  const currentTier = referralTiers.find(t => t.tier === referralStats.currentTier);
-  const nextTier = referralTiers.find(t => t.tier === referralStats.currentTier + 1);
+  const currentTier = referralTiers.find(t => t.tier === stats.currentTier);
+  const nextTier = referralTiers.find(t => t.tier === stats.currentTier + 1);
 
   return (
     <Layout>
@@ -205,7 +214,7 @@ const ReferralDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Enhanced Stats with Withdrawal Balance */}
         <div 
           ref={statsRef}
           className={`grid grid-cols-1 md:grid-cols-4 gap-6 transition-all duration-1000 delay-300 ${
@@ -214,32 +223,36 @@ const ReferralDashboard: React.FC = () => {
         >
           {[
             {
-              name: 'Total Referrals',
-              value: referralStats.totalReferrals.toString(),
-              icon: Users,
-              color: 'blue',
-              change: '+3 this month'
-            },
-            {
-              name: 'Active Referrals',
-              value: referralStats.activeReferrals.toString(),
-              icon: TrendingUp,
+              name: 'Available Balance',
+              value: `₦${(stats.availableBalance / 1000).toFixed(0)}K`,
+              icon: Wallet,
               color: 'green',
-              change: `${((referralStats.activeReferrals / referralStats.totalReferrals) * 100).toFixed(0)}% active`
+              change: 'Ready to withdraw',
+              action: () => setShowWithdrawalModal(true),
+              actionText: 'Withdraw'
             },
             {
               name: 'Total Earnings',
-              value: `₦${(referralStats.totalEarnings / 1000).toFixed(0)}K`,
+              value: `₦${(stats.totalEarnings / 1000).toFixed(0)}K`,
               icon: DollarSign,
               color: 'purple',
-              change: '+₦25K this month'
+              change: '+₦25K this month',
+              action: () => setShowEarningsModal(true),
+              actionText: 'View Details'
             },
             {
-              name: 'Pending Earnings',
-              value: `₦${(referralStats.pendingEarnings / 1000).toFixed(0)}K`,
+              name: 'Pending Balance',
+              value: `₦${(stats.pendingBalance / 1000).toFixed(0)}K`,
               icon: Clock,
               color: 'orange',
               change: 'Available in 7 days'
+            },
+            {
+              name: 'Total Referrals',
+              value: stats.totalReferrals.toString(),
+              icon: Users,
+              color: 'blue',
+              change: '+3 this month'
             }
           ].map((stat, index) => {
             const Icon = stat.icon;
@@ -249,7 +262,7 @@ const ReferralDashboard: React.FC = () => {
                 className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 hover:border-purple-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl group"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="text-sm font-medium text-gray-400">{stat.name}</p>
                     <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
@@ -258,244 +271,332 @@ const ReferralDashboard: React.FC = () => {
                     <Icon className={`w-6 h-6 text-${stat.color}-500`} />
                   </div>
                 </div>
-                <div className="mt-4">
+                <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500">{stat.change}</p>
+                  {stat.action && (
+                    <AnimatedButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={stat.action}
+                      className="text-xs px-2 py-1"
+                    >
+                      {stat.actionText}
+                    </AnimatedButton>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Tier Progress */}
-          <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-6 flex items-center">
-              <Award className="w-5 h-5 text-yellow-400 mr-2" />
-              Referral Tier Progress
+        {/* Withdrawal History Quick View */}
+        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center">
+              <ArrowUpRight className="w-5 h-5 text-green-400 mr-2" />
+              Recent Withdrawals
             </h3>
-
-            {/* Current Tier */}
-            {currentTier && (
-              <div className="bg-gray-900 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <div className={`w-10 h-10 bg-${currentTier.color}-500 rounded-full flex items-center justify-center mr-3`}>
-                      <currentTier.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-semibold">{currentTier.name} Tier</h4>
-                      <p className="text-gray-400 text-sm">{currentTier.commission}% commission</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-white font-semibold">₦{currentTier.bonus.toLocaleString()}</p>
-                    <p className="text-gray-400 text-xs">Tier bonus</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Next Tier Progress */}
-            {nextTier && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">Progress to {nextTier.name}</span>
-                  <span className="text-white text-sm">
-                    {referralStats.totalReferrals}/{nextTier.minReferrals} referrals
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
-                  <div 
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-1000"
-                    style={{ width: `${(referralStats.totalReferrals / nextTier.minReferrals) * 100}%` }}
-                  ></div>
-                </div>
-                <p className="text-gray-400 text-sm">
-                  {nextTier.minReferrals - referralStats.totalReferrals} more referrals to unlock {nextTier.commission}% commission
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Tier Levels */}
-          <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-6">Referral Tiers</h3>
-            <div className="space-y-3">
-              {referralTiers.map((tier, index) => {
-                const Icon = tier.icon;
-                const isCurrentTier = tier.tier === referralStats.currentTier;
-                const isUnlocked = tier.tier <= referralStats.currentTier;
-                
-                return (
-                  <div 
-                    key={tier.tier}
-                    className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
-                      isCurrentTier 
-                        ? 'border-purple-500 bg-purple-500/20' 
-                        : isUnlocked
-                        ? 'border-gray-600 bg-gray-900 hover:border-gray-500'
-                        : 'border-gray-700 bg-gray-900/50 opacity-60'
-                    }`}
-                    onClick={() => setSelectedTier(tier.tier)}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 bg-${tier.color}-500 rounded-full flex items-center justify-center ${
-                          !isUnlocked ? 'opacity-50' : ''
-                        }`}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-white font-medium">{tier.name}</span>
-                            {isCurrentTier && (
-                              <span className="text-xs bg-purple-500 text-white px-2 py-1 rounded-full">Current</span>
-                            )}
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            {tier.minReferrals}+ referrals • {tier.commission}% commission
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-medium">₦{tier.bonus.toLocaleString()}</div>
-                        <div className="text-gray-400 text-xs">Bonus</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Referrals */}
-        <div 
-          ref={referralsRef}
-          className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 delay-500 ${
-            referralsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">Recent Referrals</h3>
             <AnimatedButton
               variant="secondary"
-              icon={ExternalLink}
+              icon={Eye}
               size="sm"
+              onClick={() => setShowWithdrawalHistory(true)}
             >
               View All
             </AnimatedButton>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Join Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Transactions
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Earnings
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {recentReferrals.map((referral, index) => (
-                  <tr 
-                    key={referral.id} 
-                    className="hover:bg-gray-700/50 transition-all duration-300 animate-slideInFromLeft"
-                    style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
-                  >
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-white">{referral.name}</div>
-                        <div className="text-sm text-gray-400">{referral.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                        referral.status === 'active' 
-                          ? 'text-green-400 bg-green-900/20 border border-green-700'
-                          : 'text-yellow-400 bg-yellow-900/20 border border-yellow-700'
-                      }`}>
-                        {referral.status === 'active' ? (
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                        ) : (
-                          <Clock className="w-3 h-3 mr-1" />
-                        )}
-                        {referral.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">
-                      {new Date(referral.joinDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                      {referral.transactions}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-white font-medium">
-                      ₦{referral.earnings.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* How It Works */}
-        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">How Referrals Work</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                step: 1,
-                title: 'Share Your Link',
-                description: 'Share your unique referral link with friends and family',
-                icon: Share2,
-                color: 'blue'
-              },
-              {
-                step: 2,
-                title: 'They Sign Up',
-                description: 'When someone signs up using your link, they become your referral',
-                icon: Users,
-                color: 'green'
-              },
-              {
-                step: 3,
-                title: 'Earn Commissions',
-                description: 'Earn a percentage of their trading fees for every transaction',
-                icon: DollarSign,
-                color: 'purple'
-              }
-            ].map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <div 
-                  key={item.step}
-                  className="text-center p-4 rounded-lg bg-gray-900 border border-gray-700 hover:border-purple-500/50 transition-all duration-300"
-                  style={{ animationDelay: `${index * 0.2}s` }}
-                >
-                  <div className={`w-12 h-12 bg-${item.color}-500 rounded-full flex items-center justify-center mx-auto mb-4`}>
-                    <Icon className="w-6 h-6 text-white" />
+          
+          {withdrawalHistory.length > 0 ? (
+            <div className="space-y-3">
+              {withdrawalHistory.slice(0, 3).map((withdrawal) => (
+                <div key={withdrawal.id} className="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <ArrowUpRight className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">₦{withdrawal.amount.toLocaleString()}</p>
+                      <p className="text-gray-400 text-sm">{withdrawal.bankDetails.bankName}</p>
+                    </div>
                   </div>
-                  <h4 className="text-white font-semibold mb-2">{item.title}</h4>
-                  <p className="text-gray-400 text-sm">{item.description}</p>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full border ${
+                      withdrawal.status === 'paid' 
+                        ? 'text-green-400 bg-green-900/20 border-green-700'
+                        : withdrawal.status === 'pending'
+                        ? 'text-yellow-400 bg-yellow-900/20 border-yellow-700'
+                        : 'text-red-400 bg-red-900/20 border-red-700'
+                    }`}>
+                      {withdrawal.status}
+                    </span>
+                    <p className="text-gray-400 text-xs mt-1">
+                      {new Date(withdrawal.requestedAt).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">No withdrawals yet</p>
+              <p className="text-gray-500 text-sm">Start earning and withdraw your referral commissions</p>
+            </div>
+          )}
         </div>
+
+        {/* Rest of the existing referral dashboard content... */}
+        {/* Tier Progress, How It Works, etc. */}
+
+        {/* Withdrawal Request Modal */}
+        {showWithdrawalModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <Wallet className="w-6 h-6 text-green-400 mr-2" />
+                  Request Withdrawal
+                </h3>
+                <button
+                  onClick={() => setShowWithdrawalModal(false)}
+                  className="text-gray-400 hover:text-gray-300"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {error && (
+                <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 mb-4 flex items-center">
+                  <AlertCircle className="w-4 h-4 text-red-400 mr-2" />
+                  <span className="text-red-300 text-sm">{error}</span>
+                </div>
+              )}
+
+              <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-400">Available Balance:</span>
+                  <span className="text-green-400 font-bold text-lg">₦{stats.availableBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Minimum Withdrawal:</span>
+                  <span className="text-white">₦2,000</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Withdrawal Amount</label>
+                  <input
+                    type="number"
+                    value={withdrawalAmount}
+                    onChange={(e) => setWithdrawalAmount(e.target.value)}
+                    placeholder="Enter amount (min ₦2,000)"
+                    min="2000"
+                    max={stats.availableBalance}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
+                  <input
+                    type="text"
+                    value={bankDetails.accountName}
+                    onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
+                    placeholder="Enter account name"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Account Number</label>
+                  <input
+                    type="text"
+                    value={bankDetails.accountNumber}
+                    onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                    placeholder="Enter account number"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Bank Name</label>
+                  <input
+                    type="text"
+                    value={bankDetails.bankName}
+                    onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                    placeholder="Enter bank name"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-3 mt-4 mb-6">
+                <p className="text-blue-400 text-sm">
+                  ⚠️ Withdrawal requests are processed manually within 24-48 hours. Ensure your bank details are correct.
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <AnimatedButton
+                  variant="secondary"
+                  onClick={() => setShowWithdrawalModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </AnimatedButton>
+                <AnimatedButton
+                  variant="success"
+                  onClick={handleWithdrawalRequest}
+                  loading={isSubmitting}
+                  disabled={!withdrawalAmount || parseFloat(withdrawalAmount) < 2000}
+                  className="flex-1"
+                  icon={Send}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Request Withdrawal'}
+                </AnimatedButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Earnings Details Modal */}
+        {showEarningsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-2xl border border-gray-700 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <DollarSign className="w-6 h-6 text-purple-400 mr-2" />
+                  Earnings Details
+                </h3>
+                <button
+                  onClick={() => setShowEarningsModal(false)}
+                  className="text-gray-400 hover:text-gray-300"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {earnings.map((earning) => (
+                  <div key={earning.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-purple-400 font-bold text-sm">{earning.cryptocurrency}</span>
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{earning.fromUserName}</p>
+                          <p className="text-gray-400 text-sm">{earning.transactionId}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full border ${
+                        earning.status === 'confirmed' 
+                          ? 'text-green-400 bg-green-900/20 border-green-700'
+                          : 'text-yellow-400 bg-yellow-900/20 border-yellow-700'
+                      }`}>
+                        {earning.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-400">Transaction Amount:</span>
+                        <p className="text-white font-medium">₦{earning.transactionAmount.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Commission ({earning.commissionRate}%):</span>
+                        <p className="text-green-400 font-bold">₦{earning.commissionAmount.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Earned Date:</span>
+                        <p className="text-white">{new Date(earning.earnedAt).toLocaleDateString()}</p>
+                      </div>
+                      {earning.paidAt && (
+                        <div>
+                          <span className="text-gray-400">Paid Date:</span>
+                          <p className="text-white">{new Date(earning.paidAt).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Withdrawal History Modal */}
+        {showWithdrawalHistory && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-3xl border border-gray-700 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <ArrowUpRight className="w-6 h-6 text-green-400 mr-2" />
+                  Withdrawal History
+                </h3>
+                <button
+                  onClick={() => setShowWithdrawalHistory(false)}
+                  className="text-gray-400 hover:text-gray-300"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {withdrawalHistory.map((withdrawal) => (
+                  <div key={withdrawal.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-white font-bold text-lg">₦{withdrawal.amount.toLocaleString()}</p>
+                        <p className="text-gray-400 text-sm">{withdrawal.referenceNumber}</p>
+                      </div>
+                      <span className={`inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full border ${
+                        withdrawal.status === 'paid' 
+                          ? 'text-green-400 bg-green-900/20 border-green-700'
+                          : withdrawal.status === 'pending'
+                          ? 'text-yellow-400 bg-yellow-900/20 border-yellow-700'
+                          : withdrawal.status === 'approved'
+                          ? 'text-blue-400 bg-blue-900/20 border-blue-700'
+                          : 'text-red-400 bg-red-900/20 border-red-700'
+                      }`}>
+                        {withdrawal.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-400">Bank Details:</span>
+                        <p className="text-white">{withdrawal.bankDetails.accountName}</p>
+                        <p className="text-gray-300">{withdrawal.bankDetails.accountNumber} - {withdrawal.bankDetails.bankName}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Requested:</span>
+                        <p className="text-white">{new Date(withdrawal.requestedAt).toLocaleString()}</p>
+                        {withdrawal.processedAt && (
+                          <>
+                            <span className="text-gray-400">Processed:</span>
+                            <p className="text-white">{new Date(withdrawal.processedAt).toLocaleString()}</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {withdrawal.adminNotes && (
+                      <div className="mt-3 p-3 bg-blue-900/20 border border-blue-700 rounded">
+                        <span className="text-blue-300 text-sm font-medium">Admin Notes:</span>
+                        <p className="text-blue-400 text-sm">{withdrawal.adminNotes}</p>
+                      </div>
+                    )}
+                    {withdrawal.rejectionReason && (
+                      <div className="mt-3 p-3 bg-red-900/20 border border-red-700 rounded">
+                        <span className="text-red-300 text-sm font-medium">Rejection Reason:</span>
+                        <p className="text-red-400 text-sm">{withdrawal.rejectionReason}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style jsx>{`

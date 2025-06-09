@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PricingProvider } from './contexts/PricingContext';
 import { DataProvider } from './contexts/DataContext';
 import { AdminProvider } from './contexts/AdminContext';
+import { ReferralProvider } from './contexts/ReferralContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -29,6 +30,7 @@ import Transactions from './pages/admin/Transactions';
 import UserManagement from './pages/admin/UserManagement';
 import BankWalletManagement from './pages/admin/BankWalletManagement';
 import NetworkManagement from './pages/admin/NetworkManagement';
+import ReferralWithdrawals from './pages/admin/ReferralWithdrawals';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -39,97 +41,104 @@ function App() {
         <AdminProvider>
           <PricingProvider>
             <DataProvider>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                
-                {/* Protected User Routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/buy" element={
-                  <ProtectedRoute>
-                    <BuyCrypto />
-                  </ProtectedRoute>
-                } />
-                <Route path="/sell" element={
-                  <ProtectedRoute>
-                    <SellCrypto />
-                  </ProtectedRoute>
-                } />
-                <Route path="/transactions" element={
-                  <ProtectedRoute>
-                    <TransactionHistory />
-                  </ProtectedRoute>
-                } />
-                <Route path="/kyc" element={
-                  <ProtectedRoute>
-                    <KYCVerification />
-                  </ProtectedRoute>
-                } />
-                <Route path="/referrals" element={
-                  <ProtectedRoute>
-                    <ReferralDashboard />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/analytics" element={
-                  <AdminRoute>
-                    <Analytics />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/transactions" element={
-                  <AdminRoute>
-                    <Transactions />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/kyc" element={
-                  <AdminRoute>
-                    <KYCManagement />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/coins" element={
-                  <AdminRoute>
-                    <CoinsNetworks />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/custom-tokens" element={
-                  <AdminRoute>
-                    <CustomTokens />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/networks" element={
-                  <AdminRoute>
-                    <NetworkManagement />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/settings" element={
-                  <AdminRoute>
-                    <Settings />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/users" element={
-                  <AdminRoute>
-                    <UserManagement />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/bank-wallet" element={
-                  <AdminRoute>
-                    <BankWalletManagement />
-                  </AdminRoute>
-                } />
-              </Routes>
+              <ReferralProvider>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  
+                  {/* Protected User Routes */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/buy" element={
+                    <ProtectedRoute>
+                      <BuyCrypto />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/sell" element={
+                    <ProtectedRoute>
+                      <SellCrypto />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/transactions" element={
+                    <ProtectedRoute>
+                      <TransactionHistory />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/kyc" element={
+                    <ProtectedRoute>
+                      <KYCVerification />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/referrals" element={
+                    <ProtectedRoute>
+                      <ReferralDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/analytics" element={
+                    <AdminRoute>
+                      <Analytics />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/transactions" element={
+                    <AdminRoute>
+                      <Transactions />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/kyc" element={
+                    <AdminRoute>
+                      <KYCManagement />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/coins" element={
+                    <AdminRoute>
+                      <CoinsNetworks />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/custom-tokens" element={
+                    <AdminRoute>
+                      <CustomTokens />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/networks" element={
+                    <AdminRoute>
+                      <NetworkManagement />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/settings" element={
+                    <AdminRoute>
+                      <Settings />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/users" element={
+                    <AdminRoute>
+                      <UserManagement />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/bank-wallet" element={
+                    <AdminRoute>
+                      <BankWalletManagement />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/referral-withdrawals" element={
+                    <AdminRoute>
+                      <ReferralWithdrawals />
+                    </AdminRoute>
+                  } />
+                </Routes>
+              </ReferralProvider>
             </DataProvider>
           </PricingProvider>
         </AdminProvider>
