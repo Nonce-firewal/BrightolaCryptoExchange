@@ -4,6 +4,7 @@ import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePricing } from '../../contexts/PricingContext';
 import RefreshButton from '../../components/RefreshButton';
+import { CryptoLogo } from '../../utils/cryptoLogos';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -325,9 +326,11 @@ const Dashboard: React.FC = () => {
                   style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                      <span className="text-white font-bold text-sm">{coin.symbol.substring(0, 2)}</span>
-                    </div>
+                    <CryptoLogo 
+                      symbol={coin.symbol} 
+                      size={40} 
+                      className="group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" 
+                    />
                     <div>
                       <p className="font-semibold text-white group-hover:text-orange-400 transition-colors">
                         {coin.symbol}

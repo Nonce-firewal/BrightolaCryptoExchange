@@ -3,6 +3,7 @@ import Layout from '../../components/Layout';
 import { usePricing } from '../../contexts/PricingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdmin } from '../../contexts/AdminContext';
+import { CryptoLogo } from '../../utils/cryptoLogos';
 import { 
   ArrowDownRight, 
   Calculator, 
@@ -581,9 +582,7 @@ const BuyCrypto: React.FC = () => {
                               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
                             </div>
                           )}
-                          <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <span className="text-white font-bold text-sm">{token.symbol.substring(0, 2)}</span>
-                          </div>
+                          <CryptoLogo symbol={token.symbol} size={40} className="mx-auto mb-2" />
                           <div className="text-white font-medium text-sm">{token.symbol}</div>
                           <div className="text-gray-400 text-xs">₦{token.priceNGN.toLocaleString()}</div>
                           {isCustom && (
@@ -865,9 +864,7 @@ const BuyCrypto: React.FC = () => {
                           </div>
                         )}
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">{token.symbol.substring(0, 2)}</span>
-                          </div>
+                          <CryptoLogo symbol={token.symbol} size={32} />
                           <div>
                             <div className="text-white font-medium text-sm flex items-center">
                               {token.symbol}
