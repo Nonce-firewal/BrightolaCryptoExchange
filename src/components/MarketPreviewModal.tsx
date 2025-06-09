@@ -127,7 +127,7 @@ const MarketPreviewModal: React.FC<MarketPreviewModalProps> = ({ isOpen, onClose
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           {loading ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading market data..." />
+              <LoadingSpinner size="lg\" text="Loading market data..." />
             </div>
           ) : (
             <div className="space-y-4">
