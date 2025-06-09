@@ -131,12 +131,12 @@ const LandingPage: React.FC = () => {
               Trade Crypto
             </Link>
 
-            {/* Phone Mockup */}
+            {/* Half Phone Mockup - Only showing bottom portion */}
             <div className="flex justify-center mb-16">
               <div className="relative">
-                {/* Phone Frame */}
-                <div className="w-80 h-[640px] bg-gray-800 rounded-[3rem] p-3 shadow-2xl border-4 border-gray-700">
-                  <div className="w-full h-full bg-gray-900 rounded-[2.5rem] overflow-hidden relative">
+                {/* Phone Frame - Only bottom half visible */}
+                <div className="w-80 h-80 bg-gray-800 rounded-b-[3rem] p-3 shadow-2xl border-4 border-gray-700 border-t-0 overflow-hidden">
+                  <div className="w-full h-full bg-gray-900 rounded-b-[2.5rem] overflow-hidden relative">
                     {/* Status Bar */}
                     <div className="flex justify-between items-center px-6 py-3 text-sm text-white bg-gray-900">
                       <span>08:31</span>
@@ -164,32 +164,25 @@ const LandingPage: React.FC = () => {
                       <Menu className="w-6 h-6 text-white" />
                     </div>
 
-                    {/* Main Content */}
-                    <div className="bg-white h-full px-6 py-8">
-                      <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {/* Main Content - Dashboard */}
+                    <div className="bg-white h-full px-6 py-6">
+                      <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-900 mb-1">
                           What's good,
                         </h2>
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-xl font-bold text-gray-900">
                           Toluwalope
                         </h2>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex space-x-4 mb-8">
-                        <button className="flex-1 bg-orange-500 text-white py-4 rounded-lg font-semibold text-lg">
+                      <div className="flex space-x-3">
+                        <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold">
                           Sell
                         </button>
-                        <button className="flex-1 border-2 border-gray-300 text-gray-700 py-4 rounded-lg font-semibold text-lg">
+                        <button className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
                           Buy
                         </button>
-                      </div>
-
-                      {/* Additional Content Area */}
-                      <div className="space-y-4">
-                        <div className="h-16 bg-gray-100 rounded-lg"></div>
-                        <div className="h-16 bg-gray-100 rounded-lg"></div>
-                        <div className="h-16 bg-gray-100 rounded-lg"></div>
                       </div>
                     </div>
                   </div>
