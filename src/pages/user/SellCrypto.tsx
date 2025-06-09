@@ -3,29 +3,33 @@ import Layout from '../../components/Layout';
 import { usePricing } from '../../contexts/PricingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdmin } from '../../contexts/AdminContext';
+import { CryptoLogo } from '../../utils/cryptoLogos';
 import { 
   ArrowUpRight, 
   Calculator, 
-  Banknote, 
+  CreditCard, 
   Shield, 
-  TrendingDown,
+  TrendingUp,
   AlertCircle,
   CheckCircle,
   Clock,
-  Wallet,
+  Banknote,
+  Smartphone,
   Copy,
-  Network,
-  Eye,
-  EyeOff,
-  MessageCircle,
+  Building,
   Sparkles,
-  ExternalLink,
   Upload,
   Camera,
   FileText,
   Send,
+  Eye,
+  EyeOff,
+  MessageCircle,
   Info,
-  X
+  X,
+  Zap,
+  Wallet,
+  Network
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -33,62 +37,55 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 const SellCrypto: React.FC = () => {
   const { prices, loading } = usePricing();
   const { user } = useAuth();
-  const { getActiveWalletAddress, getAllActiveTokens } = useAdmin();
+  const { getActiveBankAccounts, getAllActiveTokens, getActiveWalletAddress } = useAdmin();
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
-  const [selectedNetwork, setSelectedNetwork] = useState('');
   const [amount, setAmount] = useState('');
   const [amountType, setAmountType] = useState<'crypto' | 'naira'>('crypto');
-  const [bankDetails, setBankDetails] = useState({
-    accountName: '',
-    accountNumber: '',
-    bankName: ''
-  });
+  const [selectedNetwork, setSelectedNetwork] = useState('');
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showWalletAddress, setShowWalletAddress] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   
-  // Payment proof states for sell orders
+  // Crypto transfer proof states
   const [cryptoProof, setCryptoProof] = useState<File | null>(null);
   const [transactionHash, setTransactionHash] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderDetails, setOrderDetails] = useState<any>(null);
 
+  // Bank details for receiving payment
+  const [bankDetails, setBankDetails] = useState({
+    accountName: '',
+    accountNumber: '',
+    bankName: ''
+  });
+
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: formRef, isVisible: formVisible } = useScrollAnimation();
-  const { ref: portfolioRef, isVisible: portfolioVisible } = useScrollAnimation();
+  const { ref: marketRef, isVisible: marketVisible } = useScrollAnimation();
 
+  const activeBanks = getActiveBankAccounts();
   const allTokens = getAllActiveTokens();
   const selectedPrice = prices[selectedCrypto];
+  
   const calculatedAmount = amount && selectedPrice ? 
     (amountType === 'crypto' ? 
       (parseFloat(amount) * selectedPrice?.priceNGN || 0).toLocaleString() :
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8)
     ) : '';
 
-  // Check if selected crypto is a custom token
-  const isCustomToken = (crypto: string) => {
-    const token = allTokens.find(t => t.symbol === crypto);
-    return token && 'contractAddress' in token;
-  };
-
   // Get available networks for selected crypto
-  const getAvailableNetworks = (crypto: string) => {
-    const networkMap: Record<string, string[]> = {
-      'BTC': ['Bitcoin'],
-      'ETH': ['Ethereum'],
-      'USDT': ['Ethereum', 'Tron', 'Binance Smart Chain'],
-      'SOL': ['Solana'],
-      'BNB': ['Binance Smart Chain'],
-      'ADA': ['Cardano']
-    };
-    return networkMap[crypto] || ['Ethereum']; // Default to Ethereum for custom tokens
-  };
+  const availableNetworks = selectedCrypto ? 
+    allTokens
+      .filter(token => token.symbol === selectedCrypto)
+      .map(token => 'network' in token ? token.network : 'Bitcoin') // Default network for coins
+      .filter((network, index, self) => self.indexOf(network) === index) // Remove duplicates
+    : [];
 
-  const availableNetworks = getAvailableNetworks(selectedCrypto);
-  const currentNetwork = selectedNetwork || availableNetworks[0];
-  const walletAddress = getActiveWalletAddress(selectedCrypto, currentNetwork);
+  // Get wallet address for selected crypto and network
+  const walletAddress = selectedCrypto && selectedNetwork ? 
+    getActiveWalletAddress(selectedCrypto, selectedNetwork) : null;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -96,65 +93,24 @@ const SellCrypto: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Generate WhatsApp message for custom tokens
-  const generateWhatsAppMessage = (crypto: string, amount: string, network: string) => {
-    const token = allTokens.find(t => t.symbol === crypto);
-    const price = prices[crypto];
-    const ngnAmount = amountType === 'crypto' ? calculatedAmount : amount;
-    const cryptoAmount = amountType === 'crypto' ? amount : calculatedAmount;
-
-    const message = `Hello! I want to sell my ${crypto} tokens.
-
-*Token Details:*
-• Token: ${token?.name} (${crypto})
-• Network: ${network}
-• Amount: ${cryptoAmount} ${crypto}
-• Estimated Value: ₦${ngnAmount}
-
-*My Bank Details:*
-• Account Name: ${bankDetails.accountName}
-• Account Number: ${bankDetails.accountNumber}
-• Bank: ${bankDetails.bankName}
-
-*User Information:*
-• Name: ${user?.name}
-• Email: ${user?.email}
-
-Please confirm the current rate and provide your wallet address for the transfer. Thank you!`;
-
-    return encodeURIComponent(message);
-  };
-
-  const handleCustomTokenSell = () => {
-    if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
-      alert('Please fill in all bank details before proceeding.');
-      return;
-    }
-
-    if (!amount) {
-      alert('Please enter the amount you want to sell.');
-      return;
-    }
-
-    const whatsappMessage = generateWhatsAppMessage(selectedCrypto, amount, currentNetwork);
-    const whatsappUrl = `https://wa.me/2349165501298?text=${whatsappMessage}`;
-    
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleCreateSellOrder = async () => {
+  const handleCreateOrder = async () => {
     if (user?.kycStatus !== 'approved') {
-      alert('Please complete KYC verification before selling.');
+      alert('Please complete KYC verification before selling crypto.');
+      return;
+    }
+
+    if (!selectedNetwork) {
+      alert('Please select a network for your crypto transfer.');
       return;
     }
 
     if (!walletAddress) {
-      alert('Wallet address not available for this cryptocurrency and network.');
+      alert('No wallet address available for the selected crypto and network.');
       return;
     }
 
     if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
-      alert('Please fill in all bank details before proceeding.');
+      alert('Please provide your bank details to receive payment.');
       return;
     }
 
@@ -164,12 +120,12 @@ Please confirm the current rate and provide your wallet address for the transfer
     
     // Create order details
     const order = {
-      id: `SELL${Date.now()}`,
+      id: `ORD${Date.now()}`,
       crypto: selectedCrypto,
-      network: currentNetwork,
       amount: amountType === 'crypto' ? amount : calculatedAmount,
       amountNGN: amountType === 'crypto' ? calculatedAmount : amount,
-      walletAddress: walletAddress.address,
+      network: selectedNetwork,
+      walletAddress: walletAddress?.address,
       bankDetails,
       createdAt: new Date().toISOString(),
       status: 'awaiting_crypto'
@@ -182,7 +138,7 @@ Please confirm the current rate and provide your wallet address for the transfer
 
   const handleCryptoConfirmation = async () => {
     if (!cryptoProof) {
-      alert('Please upload transaction proof before confirming.');
+      alert('Please upload proof of your crypto transfer before confirming.');
       return;
     }
 
@@ -213,17 +169,6 @@ Please confirm the current rate and provide your wallet address for the transfer
     setCryptoProof(file);
   };
 
-  // Mock portfolio data
-  const portfolio = [
-    { symbol: 'BTC', amount: 0.5, value: 37500000 },
-    { symbol: 'ETH', amount: 2.0, value: 10560000 },
-    { symbol: 'USDT', amount: 1000, value: 1650000 },
-    { symbol: 'SOL', amount: 10, value: 1980000 },
-    { symbol: 'SHIB', amount: 1000000, value: 13200 },
-    { symbol: 'PEPE', amount: 5000000, value: 8250 },
-    { symbol: 'MATIC', amount: 100, value: 140250 }
-  ];
-
   // Step 4 - Order Submitted
   if (step === 4) {
     return (
@@ -246,7 +191,7 @@ Please confirm the current rate and provide your wallet address for the transfer
                   <span className="text-white font-mono text-sm">{orderDetails?.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Crypto Sent:</span>
+                  <span className="text-gray-400">Amount:</span>
                   <span className="text-white">{orderDetails?.amount} {selectedCrypto}</span>
                 </div>
                 <div className="flex justify-between">
@@ -266,7 +211,7 @@ Please confirm the current rate and provide your wallet address for the transfer
                 <span className="text-blue-300 font-medium">What's Next?</span>
               </div>
               <ul className="text-blue-400 text-sm text-left space-y-1">
-                <li>• Transaction verification (5-15 minutes)</li>
+                <li>• Crypto transaction verification (5-15 minutes)</li>
                 <li>• NGN transfer to your bank account</li>
                 <li>• Email confirmation</li>
                 <li>• Transaction completion</li>
@@ -291,6 +236,7 @@ Please confirm the current rate and provide your wallet address for the transfer
                   setTransactionHash('');
                   setCustomerNotes('');
                   setOrderDetails(null);
+                  setBankDetails({ accountName: '', accountNumber: '', bankName: '' });
                 }}
                 className="flex-1"
               >
@@ -313,7 +259,7 @@ Please confirm the current rate and provide your wallet address for the transfer
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-white flex items-center">
-                  <Wallet className="w-8 h-8 text-orange-400 mr-3" />
+                  <Wallet className="w-8 h-8 text-purple-400 mr-3" />
                   Send Cryptocurrency
                 </h1>
                 <p className="text-gray-400 mt-1">Transfer crypto and upload proof</p>
@@ -331,65 +277,57 @@ Please confirm the current rate and provide your wallet address for the transfer
             {/* Transfer Instructions */}
             <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
               <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                <Wallet className="w-6 h-6 text-orange-500 mr-3" />
+                <Wallet className="w-6 h-6 text-purple-500 mr-3" />
                 Transfer Instructions
               </h2>
 
               {walletAddress && (
                 <div className="bg-gray-900 rounded-lg p-4 mb-6">
-                  <h3 className="text-white font-semibold mb-4">Send {selectedCrypto} to:</h3>
+                  <h3 className="text-white font-semibold mb-4">Send To This Address</h3>
                   <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Cryptocurrency:</span>
+                      <span className="text-white font-medium">{selectedCrypto}</span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Network:</span>
                       <div className="flex items-center">
                         <Network className="w-4 h-4 text-blue-400 mr-1" />
-                        <span className="text-white font-medium">{currentNetwork}</span>
+                        <span className="text-white font-medium">{selectedNetwork}</span>
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-400 text-sm block mb-1">Wallet Address:</span>
-                      <div className="flex items-center justify-between bg-gray-800 rounded p-3">
-                        <span className="text-white font-mono text-sm break-all">
-                          {showWalletAddress 
-                            ? walletAddress.address 
-                            : walletAddress.address.substring(0, 8) + '...' + walletAddress.address.substring(walletAddress.address.length - 8)
-                          }
-                        </span>
-                        <div className="flex items-center space-x-2 ml-2">
-                          <button
-                            onClick={() => setShowWalletAddress(!showWalletAddress)}
-                            className="text-gray-400 hover:text-gray-300 transition-colors"
-                          >
-                            {showWalletAddress ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                          <button
-                            onClick={() => copyToClipboard(walletAddress.address)}
-                            className="text-orange-500 hover:text-orange-400 transition-colors"
-                          >
-                            {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          </button>
-                        </div>
+                      <div className="flex items-center justify-between bg-gray-800 rounded p-2">
+                        <span className="text-white font-mono text-sm break-all">{walletAddress.address}</span>
+                        <button
+                          onClick={() => copyToClipboard(walletAddress.address)}
+                          className="text-purple-500 hover:text-purple-400 transition-colors ml-2"
+                        >
+                          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Amount to Send:</span>
-                      <span className="text-orange-500 font-bold text-xl">{orderDetails?.amount} {selectedCrypto}</span>
+                      <span className="text-purple-500 font-bold text-xl">{orderDetails?.amount} {selectedCrypto}</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-6">
+              <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
                 <div className="flex items-center mb-2">
-                  <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
-                  <span className="text-red-300 font-medium">Critical Instructions</span>
+                  <AlertCircle className="w-5 h-5 text-blue-400 mr-2" />
+                  <span className="text-blue-300 font-medium">Important Instructions</span>
                 </div>
-                <ul className="text-red-400 text-sm space-y-1">
-                  <li>• Only send {selectedCrypto} on the {currentNetwork} network</li>
+                <ul className="text-blue-400 text-sm space-y-1">
                   <li>• Send the EXACT amount shown above</li>
-                  <li>• Sending wrong amount or network will result in loss</li>
-                  <li>• Keep your transaction hash for verification</li>
-                  <li>• Upload transaction proof after sending</li>
+                  <li>• Use the correct network: {selectedNetwork}</li>
+                  <li>• Double-check the wallet address</li>
+                  <li>• Save your transaction hash</li>
+                  <li>• Upload proof of transfer below</li>
+                  <li>• Processing time: 5-15 minutes after confirmation</li>
                 </ul>
               </div>
 
@@ -405,16 +343,12 @@ Please confirm the current rate and provide your wallet address for the transfer
                     <span className="text-white">{selectedCrypto}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Network:</span>
-                    <span className="text-white">{currentNetwork}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-400">You'll Receive:</span>
                     <span className="text-white font-semibold">₦{orderDetails?.amountNGN}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Bank Account:</span>
-                    <span className="text-white">{orderDetails?.bankDetails?.accountNumber}</span>
+                    <span className="text-gray-400">Your Bank:</span>
+                    <span className="text-white">{orderDetails?.bankDetails?.bankName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Created:</span>
@@ -424,21 +358,21 @@ Please confirm the current rate and provide your wallet address for the transfer
               </div>
             </div>
 
-            {/* Transaction Proof Upload */}
+            {/* Crypto Proof Upload */}
             <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
               <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
                 <Upload className="w-6 h-6 text-orange-500 mr-3" />
-                Upload Transaction Proof
+                Upload Transfer Proof
               </h2>
 
               {/* File Upload */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-3">Transaction Screenshot</label>
-                <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 hover:border-orange-500 transition-colors duration-300">
+                <label className="block text-sm font-medium text-gray-300 mb-3">Transfer Screenshot/Receipt</label>
+                <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 hover:border-purple-500 transition-colors duration-300">
                   <div className="text-center">
                     <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-white mb-2">Upload Transaction Proof</h3>
-                    <p className="text-gray-400 text-sm mb-4">Upload screenshot of your crypto transfer transaction</p>
+                    <h3 className="text-lg font-medium text-white mb-2">Upload Transfer Proof</h3>
+                    <p className="text-gray-400 text-sm mb-4">Upload screenshot of your crypto transfer or transaction receipt</p>
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -485,9 +419,9 @@ Please confirm the current rate and provide your wallet address for the transfer
                   value={transactionHash}
                   onChange={(e) => setTransactionHash(e.target.value)}
                   placeholder="Enter transaction hash from your wallet"
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
                 />
-                <p className="text-gray-500 text-xs mt-1">This helps us verify your transaction on the blockchain</p>
+                <p className="text-gray-500 text-xs mt-1">This helps us verify your transaction faster</p>
               </div>
 
               {/* Customer Notes */}
@@ -496,9 +430,9 @@ Please confirm the current rate and provide your wallet address for the transfer
                 <textarea
                   value={customerNotes}
                   onChange={(e) => setCustomerNotes(e.target.value)}
-                  placeholder="Any additional information about your transaction..."
+                  placeholder="Any additional information about your transfer..."
                   rows={3}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300 resize-none"
+                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300 resize-none"
                 />
               </div>
 
@@ -563,35 +497,24 @@ Please confirm the current rate and provide your wallet address for the transfer
                 <ArrowUpRight className="w-8 h-8 text-orange-400 mr-3" />
                 Sell Cryptocurrency
               </h1>
-              <p className="text-gray-400 mt-1">Convert your crypto to Nigerian Naira</p>
+              <p className="text-gray-400 mt-1">Convert crypto to Nigerian Naira</p>
             </div>
             <div className="flex items-center space-x-2 text-sm">
-              <div className={`w-3 h-3 rounded-full ${step >= 1 ? 'bg-orange-400' : 'bg-gray-600'}`}></div>
-              <div className={`w-3 h-3 rounded-full ${step >= 2 ? 'bg-orange-400' : 'bg-gray-600'}`}></div>
-              <div className={`w-3 h-3 rounded-full ${step >= 3 ? 'bg-orange-400' : 'bg-gray-600'}`}></div>
-              <div className={`w-3 h-3 rounded-full ${step >= 4 ? 'bg-orange-400' : 'bg-gray-600'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${step >= 1 ? 'bg-green-400' : 'bg-gray-600'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${step >= 2 ? 'bg-green-400' : 'bg-gray-600'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${step >= 3 ? 'bg-green-400' : 'bg-gray-600'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${step >= 4 ? 'bg-green-400' : 'bg-gray-600'}`}></div>
             </div>
           </div>
         </div>
 
-        {/* KYC Warning for Regular Tokens */}
-        {user?.kycStatus !== 'approved' && !isCustomToken(selectedCrypto) && (
+        {/* KYC Warning */}
+        {user?.kycStatus !== 'approved' && (
           <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4 flex items-center animate-pulse">
             <AlertCircle className="w-5 h-5 text-yellow-400 mr-3" />
             <div>
               <p className="text-yellow-300 font-medium">KYC Verification Required</p>
-              <p className="text-yellow-400 text-sm">Complete your KYC verification to sell regular cryptocurrencies.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Custom Token Info */}
-        {isCustomToken(selectedCrypto) && (
-          <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-4 flex items-center">
-            <Sparkles className="w-5 h-5 text-purple-400 mr-3 animate-pulse" />
-            <div>
-              <p className="text-purple-300 font-medium">Custom Token Sale</p>
-              <p className="text-purple-400 text-sm">Custom tokens are sold via WhatsApp for personalized service and better rates.</p>
+              <p className="text-yellow-400 text-sm">Complete your KYC verification to sell crypto.</p>
             </div>
           </div>
         )}
@@ -608,7 +531,7 @@ Please confirm the current rate and provide your wallet address for the transfer
               <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
                   <Calculator className="w-6 h-6 text-orange-500 mr-3" />
-                  Sell Details
+                  Sale Details
                 </h2>
 
                 {/* Crypto Selection */}
@@ -616,23 +539,18 @@ Please confirm the current rate and provide your wallet address for the transfer
                   <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {allTokens.filter(token => 'sellEnabled' in token ? token.sellEnabled : true).map((token) => {
-                      const portfolioItem = portfolio.find(p => p.symbol === token.symbol);
-                      const hasWallet = getActiveWalletAddress(token.symbol);
                       const isCustom = 'contractAddress' in token;
                       return (
                         <button
                           key={token.symbol}
                           onClick={() => {
                             setSelectedCrypto(token.symbol);
-                            setSelectedNetwork('');
+                            setSelectedNetwork(''); // Reset network when crypto changes
                           }}
-                          disabled={!hasWallet && !isCustom}
                           className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 relative ${
                             selectedCrypto === token.symbol
                               ? 'border-orange-500 bg-orange-500/20'
-                              : hasWallet || isCustom
-                              ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                              : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
+                              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
                           }`}
                         >
                           {isCustom && (
@@ -640,21 +558,11 @@ Please confirm the current rate and provide your wallet address for the transfer
                               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
                             </div>
                           )}
-                          <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <span className="text-white font-bold text-sm">{token.symbol.substring(0, 2)}</span>
-                          </div>
+                          <CryptoLogo symbol={token.symbol} size={40} className="mx-auto mb-2" />
                           <div className="text-white font-medium text-sm">{token.symbol}</div>
                           <div className="text-gray-400 text-xs">₦{token.priceNGN.toLocaleString()}</div>
-                          {portfolioItem && (
-                            <div className="text-green-400 text-xs mt-1">
-                              {portfolioItem.amount} {token.symbol}
-                            </div>
-                          )}
                           {isCustom && (
                             <div className="text-purple-400 text-xs mt-1">Custom Token</div>
-                          )}
-                          {!hasWallet && !isCustom && (
-                            <div className="text-red-400 text-xs mt-1">No wallet</div>
                           )}
                         </button>
                       );
@@ -662,38 +570,30 @@ Please confirm the current rate and provide your wallet address for the transfer
                   </div>
                 </div>
 
-                {/* Network Selection for Regular Tokens */}
-                {!isCustomToken(selectedCrypto) && availableNetworks.length > 1 && (
+                {/* Network Selection */}
+                {selectedCrypto && availableNetworks.length > 0 && (
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-300 mb-3">Select Network</label>
-                    <div className="space-y-2">
-                      {availableNetworks.map((network) => {
-                        const networkWallet = getActiveWalletAddress(selectedCrypto, network);
-                        return (
-                          <button
-                            key={network}
-                            onClick={() => setSelectedNetwork(network)}
-                            disabled={!networkWallet}
-                            className={`w-full p-3 rounded-lg border transition-all duration-300 ${
-                              (selectedNetwork || availableNetworks[0]) === network
-                                ? 'border-blue-500 bg-blue-500/20'
-                                : networkWallet
-                                ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                                : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <Network className="w-5 h-5 text-blue-400" />
-                                <span className="text-white font-medium">{network}</span>
-                              </div>
-                              {!networkWallet && (
-                                <span className="text-red-400 text-sm">Unavailable</span>
-                              )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {availableNetworks.map((network) => (
+                        <button
+                          key={network}
+                          onClick={() => setSelectedNetwork(network)}
+                          className={`p-3 rounded-lg border transition-all duration-300 transform hover:scale-105 ${
+                            selectedNetwork === network
+                              ? 'border-blue-500 bg-blue-500/20'
+                              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Network className="w-5 h-5 text-blue-400" />
+                            <div className="text-left">
+                              <div className="text-white font-medium text-sm">{network}</div>
+                              <div className="text-gray-400 text-xs">Available</div>
                             </div>
-                          </button>
-                        );
-                      })}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -747,99 +647,64 @@ Please confirm the current rate and provide your wallet address for the transfer
 
                 {/* Bank Details */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">Bank Details</label>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Account Name"
-                      value={bankDetails.accountName}
-                      onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Account Number"
-                      value={bankDetails.accountNumber}
-                      onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Bank Name"
-                      value={bankDetails.bankName}
-                      onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Your Bank Details (for receiving payment)</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <input
+                        type="text"
+                        value={bankDetails.accountName}
+                        onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
+                        placeholder="Account Name"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={bankDetails.accountNumber}
+                        onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                        placeholder="Account Number"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <input
+                        type="text"
+                        value={bankDetails.bankName}
+                        onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                        placeholder="Bank Name"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Action Button */}
-                {isCustomToken(selectedCrypto) ? (
-                  <AnimatedButton
-                    variant="primary"
-                    size="lg"
-                    onClick={handleCustomTokenSell}
-                    disabled={
-                      !amount || 
-                      !selectedCrypto || 
-                      !bankDetails.accountName || 
-                      !bankDetails.accountNumber || 
-                      !bankDetails.bankName
-                    }
-                    className="w-full"
-                    icon={MessageCircle}
-                  >
-                    <div className="flex items-center">
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      Sell via WhatsApp
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </div>
-                  </AnimatedButton>
-                ) : (
-                  <AnimatedButton
-                    variant="primary"
-                    size="lg"
-                    onClick={() => setStep(2)}
-                    disabled={
-                      !amount || 
-                      !selectedCrypto || 
-                      !bankDetails.accountName || 
-                      !bankDetails.accountNumber || 
-                      !bankDetails.bankName || 
-                      user?.kycStatus !== 'approved' ||
-                      !walletAddress
-                    }
-                    className="w-full"
-                    icon={ArrowUpRight}
-                  >
-                    Continue to Review
-                  </AnimatedButton>
-                )}
-
-                {/* Custom Token Info */}
-                {isCustomToken(selectedCrypto) && (
-                  <div className="mt-4 p-4 bg-purple-900/20 border border-purple-700 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Sparkles className="w-4 h-4 text-purple-400 mr-2" />
-                      <span className="text-purple-300 font-medium">Custom Token Sale Process</span>
-                    </div>
-                    <ul className="text-purple-400 text-sm space-y-1">
-                      <li>• Click "Sell via WhatsApp" to contact our team</li>
-                      <li>• Get personalized rates and instant support</li>
-                      <li>• Secure P2P transaction with manual verification</li>
-                      <li>• Faster processing for custom tokens</li>
-                    </ul>
-                  </div>
-                )}
+                <AnimatedButton
+                  variant="primary"
+                  size="lg"
+                  onClick={() => setStep(2)}
+                  disabled={
+                    !amount || 
+                    !selectedCrypto || 
+                    !selectedNetwork ||
+                    !bankDetails.accountName ||
+                    !bankDetails.accountNumber ||
+                    !bankDetails.bankName ||
+                    user?.kycStatus !== 'approved'
+                  }
+                  className="w-full"
+                  icon={ArrowUpRight}
+                >
+                  Continue to Review
+                </AnimatedButton>
               </div>
             )}
 
-            {/* Step 2 for Regular Tokens */}
-            {step === 2 && !isCustomToken(selectedCrypto) && (
+            {step === 2 && (
               <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <Banknote className="w-6 h-6 text-orange-500 mr-3" />
-                  Review Sell Order
+                  <CreditCard className="w-6 h-6 text-orange-500 mr-3" />
+                  Order Review
                 </h2>
 
                 {/* Order Summary */}
@@ -852,10 +717,10 @@ Please confirm the current rate and provide your wallet address for the transfer
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Network:</span>
-                      <span className="text-white font-medium">{currentNetwork}</span>
+                      <span className="text-white font-medium">{selectedNetwork}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Amount to sell:</span>
+                      <span className="text-gray-400">Amount to Send:</span>
                       <span className="text-white font-medium">
                         {amountType === 'crypto' ? amount : calculatedAmount} {selectedCrypto}
                       </span>
@@ -865,28 +730,16 @@ Please confirm the current rate and provide your wallet address for the transfer
                       <span className="text-white font-medium">₦{selectedPrice?.priceNGN.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Bank Account:</span>
-                      <span className="text-white font-medium">{bankDetails.accountNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Account Name:</span>
-                      <span className="text-white font-medium">{bankDetails.accountName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Bank:</span>
+                      <span className="text-gray-400">Your Bank:</span>
                       <span className="text-white font-medium">{bankDetails.bankName}</span>
                     </div>
-                    {walletAddress && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Deposit Address:</span>
-                        <span className="text-white font-mono text-sm">
-                          {walletAddress.address.substring(0, 8)}...{walletAddress.address.substring(walletAddress.address.length - 8)}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Account Number:</span>
+                      <span className="text-white font-medium">{bankDetails.accountNumber}</span>
+                    </div>
                     <hr className="border-gray-700" />
                     <div className="flex justify-between text-lg">
-                      <span className="text-white font-semibold">You'll receive:</span>
+                      <span className="text-white font-semibold">You'll Receive:</span>
                       <span className="text-orange-500 font-bold">
                         ₦{amountType === 'crypto' ? calculatedAmount : amount}
                       </span>
@@ -894,17 +747,18 @@ Please confirm the current rate and provide your wallet address for the transfer
                   </div>
                 </div>
 
-                {/* Security Notice */}
+                {/* Transfer Instructions */}
                 <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
                   <div className="flex items-center mb-2">
                     <Shield className="w-5 h-5 text-blue-400 mr-2" />
-                    <span className="text-blue-300 font-medium">Important Notice</span>
+                    <span className="text-blue-300 font-medium">Next Steps</span>
                   </div>
-                  <div className="text-blue-400 text-sm space-y-1">
-                    <p>• Only send {selectedCrypto} on the {currentNetwork} network</p>
-                    <p>• Your funds will be transferred within 5-15 minutes after confirmation</p>
-                    <p>• Sending on wrong network will result in loss of funds</p>
-                  </div>
+                  <ul className="text-blue-400 text-sm space-y-1">
+                    <li>• Send your crypto to our secure wallet address</li>
+                    <li>• Upload your transaction proof (screenshot/hash)</li>
+                    <li>• We'll verify and send NGN to your bank within 15 minutes</li>
+                    <li>• You'll receive an email confirmation</li>
+                  </ul>
                 </div>
 
                 <div className="flex space-x-3">
@@ -917,88 +771,29 @@ Please confirm the current rate and provide your wallet address for the transfer
                   </AnimatedButton>
                   <AnimatedButton
                     variant="success"
-                    onClick={handleCreateSellOrder}
+                    onClick={handleCreateOrder}
                     loading={isProcessing}
                     className="flex-1"
                     icon={CheckCircle}
                   >
-                    {isProcessing ? 'Creating Order...' : 'Create Sell Order'}
+                    {isProcessing ? 'Creating Order...' : 'Create Order'}
                   </AnimatedButton>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Portfolio & Market */}
+          {/* Market Overview */}
           <div 
-            ref={portfolioRef}
+            ref={marketRef}
             className={`space-y-6 transition-all duration-1000 delay-500 ${
-              portfolioVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              marketVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            {/* Portfolio */}
             <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <Wallet className="w-5 h-5 text-green-400 mr-2" />
-                Your Portfolio
-              </h3>
-              <div className="space-y-3">
-                {portfolio.map((item, index) => {
-                  const hasWallet = getActiveWalletAddress(item.symbol);
-                  const coinPrice = prices[item.symbol];
-                  const isCustom = isCustomToken(item.symbol);
-                  const canSell = (coinPrice?.sellEnabled || isCustom) && (hasWallet || isCustom);
-                  return (
-                    <div 
-                      key={item.symbol}
-                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 relative ${
-                        canSell 
-                          ? 'hover:bg-gray-700/50 cursor-pointer' 
-                          : 'opacity-50 cursor-not-allowed'
-                      }`}
-                      onClick={() => canSell && setSelectedCrypto(item.symbol)}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      {isCustom && (
-                        <div className="absolute -top-1 -right-1">
-                          <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">{item.symbol.substring(0, 2)}</span>
-                        </div>
-                        <div>
-                          <div className="text-white font-medium text-sm flex items-center">
-                            {item.symbol}
-                            {isCustom && <Sparkles className="w-3 h-3 text-purple-400 ml-1" />}
-                          </div>
-                          <div className="text-gray-400 text-xs">{item.amount} {item.symbol}</div>
-                          {!hasWallet && !isCustom && (
-                            <div className="text-red-400 text-xs">No wallet available</div>
-                          )}
-                          {!coinPrice?.sellEnabled && hasWallet && !isCustom && (
-                            <div className="text-yellow-400 text-xs">Selling disabled</div>
-                          )}
-                          {isCustom && (
-                            <div className="text-purple-400 text-xs">Sell via WhatsApp</div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-medium text-sm">₦{item.value.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Market Prices */}
-            <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <TrendingDown className="w-5 h-5 text-red-400 mr-2" />
-                Sell Prices
+                <TrendingUp className="w-5 h-5 text-green-400 mr-2" />
+                Live Prices
               </h3>
               {loading ? (
                 <div className="animate-pulse space-y-4">
@@ -1018,18 +813,13 @@ Please confirm the current rate and provide your wallet address for the transfer
               ) : (
                 <div className="space-y-3">
                   {allTokens.filter(token => 'sellEnabled' in token ? token.sellEnabled : true).map((token, index) => {
-                    const hasWallet = getActiveWalletAddress(token.symbol);
                     const isCustom = 'contractAddress' in token;
                     const price = prices[token.symbol];
                     return (
                       <div 
                         key={token.symbol}
-                        className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 relative ${
-                          hasWallet || isCustom
-                            ? 'hover:bg-gray-700/50 cursor-pointer' 
-                            : 'opacity-50 cursor-not-allowed'
-                        }`}
-                        onClick={() => (hasWallet || isCustom) && setSelectedCrypto(token.symbol)}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer relative"
+                        onClick={() => setSelectedCrypto(token.symbol)}
                         style={{ animationDelay: `${index * 0.1}s` }}
                       >
                         {isCustom && (
@@ -1038,9 +828,7 @@ Please confirm the current rate and provide your wallet address for the transfer
                           </div>
                         )}
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">{token.symbol.substring(0, 2)}</span>
-                          </div>
+                          <CryptoLogo symbol={token.symbol} size={32} />
                           <div>
                             <div className="text-white font-medium text-sm flex items-center">
                               {token.symbol}
@@ -1049,12 +837,6 @@ Please confirm the current rate and provide your wallet address for the transfer
                             <div className={`text-xs ${price && price.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {price ? `${price.change24h >= 0 ? '+' : ''}${price.change24h.toFixed(2)}%` : 'Custom'}
                             </div>
-                            {!hasWallet && !isCustom && (
-                              <div className="text-red-400 text-xs">No wallet</div>
-                            )}
-                            {isCustom && (
-                              <div className="text-purple-400 text-xs">WhatsApp</div>
-                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -1066,6 +848,49 @@ Please confirm the current rate and provide your wallet address for the transfer
                 </div>
               )}
             </div>
+
+            {/* Quick Sell Amounts */}
+            <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Sell</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {['0.1', '0.5', '1.0', '2.0'].map((quickAmount) => (
+                  <button
+                    key={quickAmount}
+                    onClick={() => {
+                      setAmount(quickAmount);
+                      setAmountType('crypto');
+                    }}
+                    className="p-3 bg-gray-900 border border-gray-700 rounded-lg text-white hover:border-orange-500 hover:bg-orange-500/20 transition-all duration-300 transform hover:scale-105"
+                  >
+                    {quickAmount} {selectedCrypto || 'BTC'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Wallet Address Info */}
+            {selectedCrypto && selectedNetwork && walletAddress && (
+              <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <Wallet className="w-5 h-5 text-purple-400 mr-2" />
+                  Wallet Address
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Network:</span>
+                    <span className="text-white text-sm">{selectedNetwork}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 text-sm block mb-1">Address:</span>
+                    <div className="bg-gray-900 rounded p-2 break-all">
+                      <span className="text-white font-mono text-xs">
+                        {walletAddress.address.substring(0, 20)}...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
