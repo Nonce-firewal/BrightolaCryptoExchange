@@ -333,6 +333,9 @@ const LandingPage: React.FC = () => {
                 <a href="#features" className="text-gray-400 hover:text-white block transition-colors">
                   Features
                 </a>
+                <a href="#how-it-works" className="text-gray-400 hover:text-white block transition-colors">
+                  How It Works
+                </a>
               </div>
             </div>
             
@@ -355,6 +358,14 @@ const LandingPage: React.FC = () => {
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+              {/* Secure Admin Access - Hidden in plain sight */}
+              <Link 
+                to="/admin/login" 
+                className="text-gray-500 hover:text-gray-400 text-sm transition-colors opacity-50 hover:opacity-100"
+                title="Brightola Admin"
+              >
+                Brightola
+              </Link>
             </div>
           </div>
         </div>
