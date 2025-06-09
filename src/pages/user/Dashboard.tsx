@@ -16,7 +16,9 @@ import {
   ArrowDownRight,
   Sparkles,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useScrollAnimation, useStaggeredAnimation } from '../../hooks/useScrollAnimation';
 import AnimatedButton from '../../components/AnimatedButton';
@@ -25,7 +27,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { prices, loading, refreshPrices } = usePricing();
+  const { prices, loading, refreshPrices, lastUpdated } = usePricing();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
@@ -112,6 +114,9 @@ const Dashboard: React.FC = () => {
       color: 'purple'
     }
   ];
+
+  // Check if prices are real-time or fallback
+  const isRealTimeData = lastUpdated && (Date.now() - lastUpdated.getTime()) < 60000; // Within last minute
 
   return (
     <Layout>
@@ -278,9 +283,23 @@ const Dashboard: React.FC = () => {
             <h2 className="text-xl font-semibold text-white">Market Overview</h2>
             <div className="flex items-center space-x-3">
               <span className="text-sm text-gray-400 flex items-center">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                Live prices
+                {isRealTimeData ? (
+                  <>
+                    <Wifi className="w-4 h-4 text-green-400 mr-2 animate-pulse" />
+                    <span className="text-green-400">Live prices</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-4 h-4 text-yellow-400 mr-2" />
+                    <span className="text-yellow-400">Cached prices</span>
+                  </>
+                )}
               </span>
+              {lastUpdated && (
+                <span className="text-xs text-gray-500">
+                  Updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
               <button
                 onClick={handleRefresh}
                 className={`p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-300 ${isRefreshing ? 'animate-spin' : 'hover:scale-110'}`}
