@@ -15,7 +15,8 @@ import {
   Banknote,
   Smartphone,
   Copy,
-  Building
+  Building,
+  Sparkles
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -23,7 +24,7 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 const BuyCrypto: React.FC = () => {
   const { prices, loading } = usePricing();
   const { user } = useAuth();
-  const { getActiveBankAccounts } = useAdmin();
+  const { getActiveBankAccounts, getAllActiveTokens } = useAdmin();
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [amount, setAmount] = useState('');
   const [amountType, setAmountType] = useState<'crypto' | 'naira'>('naira');
@@ -38,6 +39,7 @@ const BuyCrypto: React.FC = () => {
   const { ref: marketRef, isVisible: marketVisible } = useScrollAnimation();
 
   const activeBanks = getActiveBankAccounts();
+  const allTokens = getAllActiveTokens();
   const selectedBankAccount = activeBanks.find(bank => bank.id === selectedBank);
 
   const selectedPrice = prices[selectedCrypto];
@@ -46,6 +48,12 @@ const BuyCrypto: React.FC = () => {
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8) :
       (parseFloat(amount) * selectedPrice?.priceNGN || 0).toLocaleString()
     ) : '';
+
+  // Check if selected crypto is a custom token
+  const isCustomToken = (crypto: string) => {
+    const token = allTokens.find(t => t.symbol === crypto);
+    return token && 'contractAddress' in token;
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -237,24 +245,35 @@ const BuyCrypto: React.FC = () => {
                 {/* Crypto Selection */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.values(prices).filter(coin => coin.buyEnabled).map((coin) => (
-                      <button
-                        key={coin.symbol}
-                        onClick={() => setSelectedCrypto(coin.symbol)}
-                        className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 ${
-                          selectedCrypto === coin.symbol
-                            ? 'border-orange-500 bg-orange-500/20'
-                            : 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                        }`}
-                      >
-                        <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                          <span className="text-white font-bold text-sm">{coin.symbol.substring(0, 2)}</span>
-                        </div>
-                        <div className="text-white font-medium text-sm">{coin.symbol}</div>
-                        <div className="text-gray-400 text-xs">₦{coin.priceNGN.toLocaleString()}</div>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {allTokens.filter(token => 'buyEnabled' in token ? token.buyEnabled : true).map((token) => {
+                      const isCustom = 'contractAddress' in token;
+                      return (
+                        <button
+                          key={token.symbol}
+                          onClick={() => setSelectedCrypto(token.symbol)}
+                          className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 relative ${
+                            selectedCrypto === token.symbol
+                              ? 'border-orange-500 bg-orange-500/20'
+                              : 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                          }`}
+                        >
+                          {isCustom && (
+                            <div className="absolute -top-2 -right-2">
+                              <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+                            </div>
+                          )}
+                          <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span className="text-white font-bold text-sm">{token.symbol.substring(0, 2)}</span>
+                          </div>
+                          <div className="text-white font-medium text-sm">{token.symbol}</div>
+                          <div className="text-gray-400 text-xs">₦{token.priceNGN.toLocaleString()}</div>
+                          {isCustom && (
+                            <div className="text-purple-400 text-xs mt-1">Custom Token</div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -512,29 +531,41 @@ const BuyCrypto: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.values(prices).filter(coin => coin.buyEnabled).map((coin, index) => (
-                    <div 
-                      key={coin.symbol}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer"
-                      onClick={() => setSelectedCrypto(coin.symbol)}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">{coin.symbol.substring(0, 2)}</span>
-                        </div>
-                        <div>
-                          <div className="text-white font-medium text-sm">{coin.symbol}</div>
-                          <div className={`text-xs ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
+                  {allTokens.filter(token => 'buyEnabled' in token ? token.buyEnabled : true).map((token, index) => {
+                    const isCustom = 'contractAddress' in token;
+                    const price = prices[token.symbol];
+                    return (
+                      <div 
+                        key={token.symbol}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer relative"
+                        onClick={() => setSelectedCrypto(token.symbol)}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        {isCustom && (
+                          <div className="absolute -top-1 -right-1">
+                            <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">{token.symbol.substring(0, 2)}</span>
+                          </div>
+                          <div>
+                            <div className="text-white font-medium text-sm flex items-center">
+                              {token.symbol}
+                              {isCustom && <Sparkles className="w-3 h-3 text-purple-400 ml-1" />}
+                            </div>
+                            <div className={`text-xs ${price && price.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {price ? `${price.change24h >= 0 ? '+' : ''}${price.change24h.toFixed(2)}%` : 'Custom'}
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <div className="text-white font-medium text-sm">₦{token.priceNGN.toLocaleString()}</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-medium text-sm">₦{coin.priceNGN.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -16,7 +16,10 @@ import {
   Copy,
   Network,
   Eye,
-  EyeOff
+  EyeOff,
+  MessageCircle,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
@@ -24,7 +27,7 @@ import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 const SellCrypto: React.FC = () => {
   const { prices, loading } = usePricing();
   const { user } = useAuth();
-  const { getActiveWalletAddress } = useAdmin();
+  const { getActiveWalletAddress, getAllActiveTokens } = useAdmin();
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [selectedNetwork, setSelectedNetwork] = useState('');
   const [amount, setAmount] = useState('');
@@ -43,6 +46,7 @@ const SellCrypto: React.FC = () => {
   const { ref: formRef, isVisible: formVisible } = useScrollAnimation();
   const { ref: portfolioRef, isVisible: portfolioVisible } = useScrollAnimation();
 
+  const allTokens = getAllActiveTokens();
   const selectedPrice = prices[selectedCrypto];
   const calculatedAmount = amount && selectedPrice ? 
     (amountType === 'crypto' ? 
@@ -50,17 +54,23 @@ const SellCrypto: React.FC = () => {
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8)
     ) : '';
 
+  // Check if selected crypto is a custom token
+  const isCustomToken = (crypto: string) => {
+    const token = allTokens.find(t => t.symbol === crypto);
+    return token && 'contractAddress' in token;
+  };
+
   // Get available networks for selected crypto
   const getAvailableNetworks = (crypto: string) => {
     const networkMap: Record<string, string[]> = {
       'BTC': ['Bitcoin'],
       'ETH': ['Ethereum'],
-      'USDT': ['Ethereum (ERC-20)', 'Tron (TRC-20)', 'Binance Smart Chain (BEP-20)'],
+      'USDT': ['Ethereum', 'Tron', 'Binance Smart Chain'],
       'SOL': ['Solana'],
       'BNB': ['Binance Smart Chain'],
       'ADA': ['Cardano']
     };
-    return networkMap[crypto] || [];
+    return networkMap[crypto] || ['Ethereum']; // Default to Ethereum for custom tokens
   };
 
   const availableNetworks = getAvailableNetworks(selectedCrypto);
@@ -73,7 +83,53 @@ const SellCrypto: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSell = async () => {
+  // Generate WhatsApp message for custom tokens
+  const generateWhatsAppMessage = (crypto: string, amount: string, network: string) => {
+    const token = allTokens.find(t => t.symbol === crypto);
+    const price = prices[crypto];
+    const ngnAmount = amountType === 'crypto' ? calculatedAmount : amount;
+    const cryptoAmount = amountType === 'crypto' ? amount : calculatedAmount;
+
+    const message = `Hello! I want to sell my ${crypto} tokens.
+
+*Token Details:*
+• Token: ${token?.name} (${crypto})
+• Network: ${network}
+• Amount: ${cryptoAmount} ${crypto}
+• Estimated Value: ₦${ngnAmount}
+
+*My Bank Details:*
+• Account Name: ${bankDetails.accountName}
+• Account Number: ${bankDetails.accountNumber}
+• Bank: ${bankDetails.bankName}
+
+*User Information:*
+• Name: ${user?.name}
+• Email: ${user?.email}
+
+Please confirm the current rate and provide your wallet address for the transfer. Thank you!`;
+
+    return encodeURIComponent(message);
+  };
+
+  const handleCustomTokenSell = () => {
+    if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
+      alert('Please fill in all bank details before proceeding.');
+      return;
+    }
+
+    if (!amount) {
+      alert('Please enter the amount you want to sell.');
+      return;
+    }
+
+    const whatsappMessage = generateWhatsAppMessage(selectedCrypto, amount, currentNetwork);
+    const whatsappUrl = `https://wa.me/2349165501298?text=${whatsappMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleRegularSell = async () => {
     if (user?.kycStatus !== 'approved') {
       alert('Please complete KYC verification before selling.');
       return;
@@ -96,7 +152,10 @@ const SellCrypto: React.FC = () => {
     { symbol: 'BTC', amount: 0.5, value: 37500000 },
     { symbol: 'ETH', amount: 2.0, value: 10560000 },
     { symbol: 'USDT', amount: 1000, value: 1650000 },
-    { symbol: 'SOL', amount: 10, value: 1980000 }
+    { symbol: 'SOL', amount: 10, value: 1980000 },
+    { symbol: 'SHIB', amount: 1000000, value: 13200 },
+    { symbol: 'PEPE', amount: 5000000, value: 8250 },
+    { symbol: 'MATIC', amount: 100, value: 140250 }
   ];
 
   if (step === 3) {
@@ -187,7 +246,6 @@ const SellCrypto: React.FC = () => {
         <div 
           ref={headerRef}
           className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 ${
-            
             headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
@@ -207,13 +265,24 @@ const SellCrypto: React.FC = () => {
           </div>
         </div>
 
-        {/* KYC Warning */}
-        {user?.kycStatus !== 'approved' && (
+        {/* KYC Warning for Regular Tokens */}
+        {user?.kycStatus !== 'approved' && !isCustomToken(selectedCrypto) && (
           <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4 flex items-center animate-pulse">
             <AlertCircle className="w-5 h-5 text-yellow-400 mr-3" />
             <div>
               <p className="text-yellow-300 font-medium">KYC Verification Required</p>
-              <p className="text-yellow-400 text-sm">Complete your KYC verification to sell cryptocurrency.</p>
+              <p className="text-yellow-400 text-sm">Complete your KYC verification to sell regular cryptocurrencies.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Token Info */}
+        {isCustomToken(selectedCrypto) && (
+          <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-4 flex items-center">
+            <Sparkles className="w-5 h-5 text-purple-400 mr-3 animate-pulse" />
+            <div>
+              <p className="text-purple-300 font-medium">Custom Token Sale</p>
+              <p className="text-purple-400 text-sm">Custom tokens are sold via WhatsApp for personalized service and better rates.</p>
             </div>
           </div>
         )}
@@ -226,197 +295,197 @@ const SellCrypto: React.FC = () => {
               formVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            {step === 1 && (
-              <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
-                <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <Calculator className="w-6 h-6 text-orange-500 mr-3" />
-                  Sell Details
-                </h2>
+            <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+              <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
+                <Calculator className="w-6 h-6 text-orange-500 mr-3" />
+                Sell Details
+              </h2>
 
-                {/* Crypto Selection */}
+              {/* Crypto Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {allTokens.filter(token => 'sellEnabled' in token ? token.sellEnabled : true).map((token) => {
+                    const portfolioItem = portfolio.find(p => p.symbol === token.symbol);
+                    const hasWallet = getActiveWalletAddress(token.symbol);
+                    const isCustom = 'contractAddress' in token;
+                    return (
+                      <button
+                        key={token.symbol}
+                        onClick={() => {
+                          setSelectedCrypto(token.symbol);
+                          setSelectedNetwork('');
+                        }}
+                        disabled={!hasWallet && !isCustom}
+                        className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 relative ${
+                          selectedCrypto === token.symbol
+                            ? 'border-orange-500 bg-orange-500/20'
+                            : hasWallet || isCustom
+                            ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
+                            : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        {isCustom && (
+                          <div className="absolute -top-2 -right-2">
+                            <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
+                          </div>
+                        )}
+                        <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <span className="text-white font-bold text-sm">{token.symbol.substring(0, 2)}</span>
+                        </div>
+                        <div className="text-white font-medium text-sm">{token.symbol}</div>
+                        <div className="text-gray-400 text-xs">₦{token.priceNGN.toLocaleString()}</div>
+                        {portfolioItem && (
+                          <div className="text-green-400 text-xs mt-1">
+                            {portfolioItem.amount} {token.symbol}
+                          </div>
+                        )}
+                        {isCustom && (
+                          <div className="text-purple-400 text-xs mt-1">Custom Token</div>
+                        )}
+                        {!hasWallet && !isCustom && (
+                          <div className="text-red-400 text-xs mt-1">No wallet</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Network Selection for Regular Tokens */}
+              {!isCustomToken(selectedCrypto) && availableNetworks.length > 1 && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.values(prices).filter(coin => coin.sellEnabled).map((coin) => {
-                      const portfolioItem = portfolio.find(p => p.symbol === coin.symbol);
-                      const hasWallet = getActiveWalletAddress(coin.symbol);
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Select Network</label>
+                  <div className="space-y-2">
+                    {availableNetworks.map((network) => {
+                      const networkWallet = getActiveWalletAddress(selectedCrypto, network);
                       return (
                         <button
-                          key={coin.symbol}
-                          onClick={() => {
-                            setSelectedCrypto(coin.symbol);
-                            setSelectedNetwork('');
-                          }}
-                          disabled={!hasWallet}
-                          className={`p-4 rounded-lg border transition-all duration-300 transform hover:scale-105 ${
-                            selectedCrypto === coin.symbol
-                              ? 'border-orange-500 bg-orange-500/20'
-                              : hasWallet
+                          key={network}
+                          onClick={() => setSelectedNetwork(network)}
+                          disabled={!networkWallet}
+                          className={`w-full p-3 rounded-lg border transition-all duration-300 ${
+                            (selectedNetwork || availableNetworks[0]) === network
+                              ? 'border-blue-500 bg-blue-500/20'
+                              : networkWallet
                               ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
                               : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
                           }`}
                         >
-                          <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <span className="text-white font-bold text-sm">{coin.symbol.substring(0, 2)}</span>
-                          </div>
-                          <div className="text-white font-medium text-sm">{coin.symbol}</div>
-                          <div className="text-gray-400 text-xs">₦{coin.priceNGN.toLocaleString()}</div>
-                          {portfolioItem && (
-                            <div className="text-green-400 text-xs mt-1">
-                              {portfolioItem.amount} {coin.symbol}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Network className="w-5 h-5 text-blue-400" />
+                              <span className="text-white font-medium">{network}</span>
                             </div>
-                          )}
-                          {!hasWallet && (
-                            <div className="text-red-400 text-xs mt-1">No wallet</div>
-                          )}
+                            {!networkWallet && (
+                              <span className="text-red-400 text-sm">Unavailable</span>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
                   </div>
                 </div>
+              )}
 
-                {/* Network Selection */}
-                {availableNetworks.length > 1 && (
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-3">Select Network</label>
-                    <div className="space-y-2">
-                      {availableNetworks.map((network) => {
-                        const networkWallet = getActiveWalletAddress(selectedCrypto, network);
-                        return (
-                          <button
-                            key={network}
-                            onClick={() => setSelectedNetwork(network)}
-                            disabled={!networkWallet}
-                            className={`w-full p-3 rounded-lg border transition-all duration-300 ${
-                              (selectedNetwork || availableNetworks[0]) === network
-                                ? 'border-blue-500 bg-blue-500/20'
-                                : networkWallet
-                                ? 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                                : 'border-gray-700 bg-gray-900/50 opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <Network className="w-5 h-5 text-blue-400" />
-                                <span className="text-white font-medium">{network}</span>
-                              </div>
-                              {!networkWallet && (
-                                <span className="text-red-400 text-sm">Unavailable</span>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
+              {/* Amount Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-3">Amount</label>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setAmountType('crypto')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      amountType === 'crypto'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {selectedCrypto} Amount
+                  </button>
+                  <button
+                    onClick={() => setAmountType('naira')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      amountType === 'naira'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    NGN Amount
+                  </button>
+                </div>
+                <div className="mt-3 relative">
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={`Enter ${amountType === 'crypto' ? selectedCrypto : 'NGN'} amount`}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    {amountType === 'crypto' ? selectedCrypto : '₦'}
+                  </div>
+                </div>
+                {amount && (
+                  <div className="mt-2 p-3 bg-gray-900 rounded-lg">
+                    <div className="text-sm text-gray-400">You will receive:</div>
+                    <div className="text-lg font-semibold text-white">
+                      {amountType === 'crypto' ? `₦${calculatedAmount}` : `${calculatedAmount} ${selectedCrypto}`}
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Wallet Address Preview */}
-                {walletAddress && (
-                  <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-400 text-sm">Deposit Address ({currentNetwork}):</span>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setShowWalletAddress(!showWalletAddress)}
-                          className="text-gray-400 hover:text-gray-300 transition-colors"
-                        >
-                          {showWalletAddress ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button
-                          onClick={() => copyToClipboard(walletAddress.address)}
-                          className="text-orange-500 hover:text-orange-400 transition-colors"
-                        >
-                          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="bg-gray-800 rounded p-3">
-                      <span className="text-white font-mono text-sm break-all">
-                        {showWalletAddress 
-                          ? walletAddress.address 
-                          : walletAddress.address.substring(0, 12) + '...' + walletAddress.address.substring(walletAddress.address.length - 12)
-                        }
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Amount Input */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">Amount</label>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => setAmountType('crypto')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                        amountType === 'crypto'
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      {selectedCrypto} Amount
-                    </button>
-                    <button
-                      onClick={() => setAmountType('naira')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                        amountType === 'naira'
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      NGN Amount
-                    </button>
-                  </div>
-                  <div className="mt-3 relative">
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder={`Enter ${amountType === 'crypto' ? selectedCrypto : 'NGN'} amount`}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      {amountType === 'crypto' ? selectedCrypto : '₦'}
-                    </div>
-                  </div>
-                  {amount && (
-                    <div className="mt-2 p-3 bg-gray-900 rounded-lg">
-                      <div className="text-sm text-gray-400">You will receive:</div>
-                      <div className="text-lg font-semibold text-white">
-                        {amountType === 'crypto' ? `₦${calculatedAmount}` : `${calculatedAmount} ${selectedCrypto}`}
-                      </div>
-                    </div>
-                  )}
+              {/* Bank Details */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-3">Bank Details</label>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Account Name"
+                    value={bankDetails.accountName}
+                    onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Account Number"
+                    value={bankDetails.accountNumber}
+                    onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Bank Name"
+                    value={bankDetails.bankName}
+                    onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                  />
                 </div>
+              </div>
 
-                {/* Bank Details */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">Bank Details</label>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Account Name"
-                      value={bankDetails.accountName}
-                      onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Account Number"
-                      value={bankDetails.accountNumber}
-                      onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Bank Name"
-                      value={bankDetails.bankName}
-                      onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
-                    />
+              {/* Action Button */}
+              {isCustomToken(selectedCrypto) ? (
+                <AnimatedButton
+                  variant="primary"
+                  size="lg"
+                  onClick={handleCustomTokenSell}
+                  disabled={
+                    !amount || 
+                    !selectedCrypto || 
+                    !bankDetails.accountName || 
+                    !bankDetails.accountNumber || 
+                    !bankDetails.bankName
+                  }
+                  className="w-full"
+                  icon={MessageCircle}
+                >
+                  <div className="flex items-center">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Sell via WhatsApp
+                    <ExternalLink className="w-4 h-4 ml-2" />
                   </div>
-                </div>
-
+                </AnimatedButton>
+              ) : (
                 <AnimatedButton
                   variant="primary"
                   size="lg"
@@ -435,10 +504,27 @@ const SellCrypto: React.FC = () => {
                 >
                   Continue to Review
                 </AnimatedButton>
-              </div>
-            )}
+              )}
 
-            {step === 2 && (
+              {/* Custom Token Info */}
+              {isCustomToken(selectedCrypto) && (
+                <div className="mt-4 p-4 bg-purple-900/20 border border-purple-700 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <Sparkles className="w-4 h-4 text-purple-400 mr-2" />
+                    <span className="text-purple-300 font-medium">Custom Token Sale Process</span>
+                  </div>
+                  <ul className="text-purple-400 text-sm space-y-1">
+                    <li>• Click "Sell via WhatsApp" to contact our team</li>
+                    <li>• Get personalized rates and instant support</li>
+                    <li>• Secure P2P transaction with manual verification</li>
+                    <li>• Faster processing for custom tokens</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Step 2 for Regular Tokens */}
+            {step === 2 && !isCustomToken(selectedCrypto) && (
               <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
                   <Banknote className="w-6 h-6 text-orange-500 mr-3" />
@@ -519,8 +605,8 @@ const SellCrypto: React.FC = () => {
                     Back
                   </AnimatedButton>
                   <AnimatedButton
-                    variant="primary"
-                    onClick={handleSell}
+                    variant="success"
+                    onClick={handleRegularSell}
                     loading={isProcessing}
                     className="flex-1"
                     icon={CheckCircle}
@@ -549,11 +635,12 @@ const SellCrypto: React.FC = () => {
                 {portfolio.map((item, index) => {
                   const hasWallet = getActiveWalletAddress(item.symbol);
                   const coinPrice = prices[item.symbol];
-                  const canSell = coinPrice?.sellEnabled && hasWallet;
+                  const isCustom = isCustomToken(item.symbol);
+                  const canSell = (coinPrice?.sellEnabled || isCustom) && (hasWallet || isCustom);
                   return (
                     <div 
                       key={item.symbol}
-                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 relative ${
                         canSell 
                           ? 'hover:bg-gray-700/50 cursor-pointer' 
                           : 'opacity-50 cursor-not-allowed'
@@ -561,18 +648,29 @@ const SellCrypto: React.FC = () => {
                       onClick={() => canSell && setSelectedCrypto(item.symbol)}
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
+                      {isCustom && (
+                        <div className="absolute -top-1 -right-1">
+                          <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
+                        </div>
+                      )}
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
                           <span className="text-white font-bold text-xs">{item.symbol.substring(0, 2)}</span>
                         </div>
                         <div>
-                          <div className="text-white font-medium text-sm">{item.symbol}</div>
+                          <div className="text-white font-medium text-sm flex items-center">
+                            {item.symbol}
+                            {isCustom && <Sparkles className="w-3 h-3 text-purple-400 ml-1" />}
+                          </div>
                           <div className="text-gray-400 text-xs">{item.amount} {item.symbol}</div>
-                          {!hasWallet && (
+                          {!hasWallet && !isCustom && (
                             <div className="text-red-400 text-xs">No wallet available</div>
                           )}
-                          {!coinPrice?.sellEnabled && hasWallet && (
+                          {!coinPrice?.sellEnabled && hasWallet && !isCustom && (
                             <div className="text-yellow-400 text-xs">Selling disabled</div>
+                          )}
+                          {isCustom && (
+                            <div className="text-purple-400 text-xs">Sell via WhatsApp</div>
                           )}
                         </div>
                       </div>
@@ -608,35 +706,48 @@ const SellCrypto: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.values(prices).filter(coin => coin.sellEnabled).map((coin, index) => {
-                    const hasWallet = getActiveWalletAddress(coin.symbol);
+                  {allTokens.filter(token => 'sellEnabled' in token ? token.sellEnabled : true).map((token, index) => {
+                    const hasWallet = getActiveWalletAddress(token.symbol);
+                    const isCustom = 'contractAddress' in token;
+                    const price = prices[token.symbol];
                     return (
                       <div 
-                        key={coin.symbol}
-                        className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
-                          hasWallet 
+                        key={token.symbol}
+                        className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 relative ${
+                          hasWallet || isCustom
                             ? 'hover:bg-gray-700/50 cursor-pointer' 
                             : 'opacity-50 cursor-not-allowed'
                         }`}
-                        onClick={() => hasWallet && setSelectedCrypto(coin.symbol)}
+                        onClick={() => (hasWallet || isCustom) && setSelectedCrypto(token.symbol)}
                         style={{ animationDelay: `${index * 0.1}s` }}
                       >
+                        {isCustom && (
+                          <div className="absolute -top-1 -right-1">
+                            <Sparkles className="w-3 h-3 text-purple-400 animate-pulse" />
+                          </div>
+                        )}
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">{coin.symbol.substring(0, 2)}</span>
+                            <span className="text-white font-bold text-xs">{token.symbol.substring(0, 2)}</span>
                           </div>
                           <div>
-                            <div className="text-white font-medium text-sm">{coin.symbol}</div>
-                            <div className={`text-xs ${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
+                            <div className="text-white font-medium text-sm flex items-center">
+                              {token.symbol}
+                              {isCustom && <Sparkles className="w-3 h-3 text-purple-400 ml-1" />}
                             </div>
-                            {!hasWallet && (
+                            <div className={`text-xs ${price && price.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {price ? `${price.change24h >= 0 ? '+' : ''}${price.change24h.toFixed(2)}%` : 'Custom'}
+                            </div>
+                            {!hasWallet && !isCustom && (
                               <div className="text-red-400 text-xs">No wallet</div>
+                            )}
+                            {isCustom && (
+                              <div className="text-purple-400 text-xs">WhatsApp</div>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-white font-medium text-sm">₦{coin.priceNGN.toLocaleString()}</div>
+                          <div className="text-white font-medium text-sm">₦{token.priceNGN.toLocaleString()}</div>
                         </div>
                       </div>
                     );
