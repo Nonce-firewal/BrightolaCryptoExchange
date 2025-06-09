@@ -14,10 +14,17 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useScrollAnimation } from '../../hooks/useScrollAnimation';
+import AnimatedButton from '../../components/AnimatedButton';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { prices, loading } = usePricing();
+
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
+  const { ref: marketRef, isVisible: marketVisible } = useScrollAnimation();
+  const { ref: actionsRef, isVisible: actionsVisible } = useScrollAnimation();
 
   const kycStatusConfig = {
     'not-submitted': {
@@ -77,7 +84,12 @@ const Dashboard: React.FC = () => {
     <Layout>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+        <div 
+          ref={headerRef}
+          className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">Welcome back, {user?.name}!</h1>
@@ -85,29 +97,31 @@ const Dashboard: React.FC = () => {
               <p className="text-sm text-gray-500 mt-2">Your Referral Code: <span className="font-mono font-semibold text-orange-500">{user?.referralCode}</span></p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-4">
-              <Link
-                to="/buy"
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+              <AnimatedButton
+                variant="success"
+                icon={ArrowDownRight}
+                onClick={() => window.location.href = '/buy'}
               >
-                <ArrowDownRight className="w-4 h-4 mr-2" />
                 Buy Crypto
-              </Link>
-              <Link
-                to="/sell"
-                className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center"
+              </AnimatedButton>
+              <AnimatedButton
+                variant="primary"
+                icon={ArrowUpRight}
+                onClick={() => window.location.href = '/sell'}
               >
-                <ArrowUpRight className="w-4 h-4 mr-2" />
                 Sell Crypto
-              </Link>
+              </AnimatedButton>
             </div>
           </div>
         </div>
 
         {/* KYC Status Alert */}
         {user?.kycStatus !== 'approved' && (
-          <div className={`bg-${kycConfig.color === 'gray' ? 'gray-800' : kycConfig.color === 'yellow' ? 'yellow-900/50' : kycConfig.color === 'green' ? 'green-900/50' : 'red-900/50'} border border-${kycConfig.color === 'gray' ? 'gray-700' : kycConfig.color === 'yellow' ? 'yellow-700' : kycConfig.color === 'green' ? 'green-700' : 'red-700'} rounded-lg p-4 flex items-center justify-between`}>
+          <div className={`bg-${kycConfig.color === 'gray' ? 'gray-800' : kycConfig.color === 'yellow' ? 'yellow-900/50' : kycConfig.color === 'green' ? 'green-900/50' : 'red-900/50'} border border-${kycConfig.color === 'gray' ? 'gray-700' : kycConfig.color === 'yellow' ? 'yellow-700' : kycConfig.color === 'green' ? 'green-700' : 'red-700'} rounded-lg p-4 flex items-center justify-between transition-all duration-1000 delay-300 ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
             <div className="flex items-center">
-              <KycIcon className={`w-5 h-5 ${kycConfig.color === 'gray' ? 'text-gray-400' : kycConfig.color === 'yellow' ? 'text-yellow-400' : kycConfig.color === 'green' ? 'text-green-400' : 'text-red-400'} mr-3`} />
+              <KycIcon className={`w-5 h-5 ${kycConfig.color === 'gray' ? 'text-gray-400' : kycConfig.color === 'yellow' ? 'text-yellow-400' : kycConfig.color === 'green' ? 'text-green-400' : 'text-red-400'} mr-3 animate-pulse`} />
               <div>
                 <p className={`${kycConfig.color === 'gray' ? 'text-gray-300' : kycConfig.color === 'yellow' ? 'text-yellow-300' : kycConfig.color === 'green' ? 'text-green-300' : 'text-red-300'} font-medium`}>
                   KYC Status: {kycConfig.text}
@@ -124,7 +138,7 @@ const Dashboard: React.FC = () => {
             </div>
             <Link
               to="/kyc"
-              className={`bg-${kycConfig.color === 'gray' ? 'gray-600' : kycConfig.color === 'yellow' ? 'yellow-600' : kycConfig.color === 'green' ? 'green-600' : 'red-600'} text-white px-4 py-2 rounded-lg hover:bg-${kycConfig.color === 'gray' ? 'gray-700' : kycConfig.color === 'yellow' ? 'yellow-700' : kycConfig.color === 'green' ? 'green-700' : 'red-700'} transition-colors text-sm`}
+              className={`bg-${kycConfig.color === 'gray' ? 'gray-600' : kycConfig.color === 'yellow' ? 'yellow-600' : kycConfig.color === 'green' ? 'green-600' : 'red-600'} text-white px-4 py-2 rounded-lg hover:bg-${kycConfig.color === 'gray' ? 'gray-700' : kycConfig.color === 'yellow' ? 'yellow-700' : kycConfig.color === 'green' ? 'green-700' : 'red-700'} transition-all duration-300 transform hover:scale-105 text-sm`}
             >
               {kycConfig.action}
             </Link>
@@ -132,17 +146,26 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat) => {
+        <div 
+          ref={statsRef}
+          className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-1000 delay-500 ${
+            statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.name} className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+              <div 
+                key={stat.name} 
+                className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 hover:border-orange-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl group"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-400">{stat.name}</p>
                     <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
                   </div>
-                  <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <Icon className="w-6 h-6 text-orange-500" />
                   </div>
                 </div>
@@ -163,10 +186,18 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Market Overview */}
-        <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6">
+        <div 
+          ref={marketRef}
+          className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 delay-700 ${
+            marketVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Market Overview</h2>
-            <span className="text-sm text-gray-400">Live prices</span>
+            <span className="text-sm text-gray-400 flex items-center">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+              Live prices
+            </span>
           </div>
 
           {loading ? (
@@ -189,10 +220,14 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.values(prices).map((coin) => (
-                <div key={coin.symbol} className="flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-colors">
+              {Object.values(prices).map((coin, index) => (
+                <div 
+                  key={coin.symbol} 
+                  className="flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-all duration-300 transform hover:scale-[1.02] group"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                       <span className="text-white font-bold text-sm">{coin.symbol.substring(0, 2)}</span>
                     </div>
                     <div>
@@ -220,58 +255,60 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/buy"
-            className="bg-green-900/50 border border-green-700 rounded-lg p-6 hover:bg-green-900/70 transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-green-300">Buy Crypto</h3>
-                <p className="text-sm text-green-400 mt-1">Purchase with NGN</p>
-              </div>
-              <ArrowDownRight className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
-            </div>
-          </Link>
-
-          <Link
-            to="/sell"
-            className="bg-orange-900/50 border border-orange-700 rounded-lg p-6 hover:bg-orange-900/70 transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-orange-300">Sell Crypto</h3>
-                <p className="text-sm text-orange-400 mt-1">Convert to NGN</p>
-              </div>
-              <ArrowUpRight className="w-6 h-6 text-orange-400 group-hover:scale-110 transition-transform" />
-            </div>
-          </Link>
-
-          <Link
-            to="/transactions"
-            className="bg-purple-900/50 border border-purple-700 rounded-lg p-6 hover:bg-purple-900/70 transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-purple-300">Transactions</h3>
-                <p className="text-sm text-purple-400 mt-1">View history</p>
-              </div>
-              <Activity className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
-            </div>
-          </Link>
-
-          <Link
-            to="/referrals"
-            className="bg-blue-900/50 border border-blue-700 rounded-lg p-6 hover:bg-blue-900/70 transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-blue-300">Referrals</h3>
-                <p className="text-sm text-blue-400 mt-1">Earn rewards</p>
-              </div>
-              <TrendingUp className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
-            </div>
-          </Link>
+        <div 
+          ref={actionsRef}
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-1000 delay-900 ${
+            actionsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          {[
+            {
+              title: 'Buy Crypto',
+              description: 'Purchase with NGN',
+              href: '/buy',
+              icon: ArrowDownRight,
+              color: 'green'
+            },
+            {
+              title: 'Sell Crypto',
+              description: 'Convert to NGN',
+              href: '/sell',
+              icon: ArrowUpRight,
+              color: 'orange'
+            },
+            {
+              title: 'Transactions',
+              description: 'View history',
+              href: '/transactions',
+              icon: Activity,
+              color: 'purple'
+            },
+            {
+              title: 'Referrals',
+              description: 'Earn rewards',
+              href: '/referrals',
+              icon: TrendingUp,
+              color: 'blue'
+            }
+          ].map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.title}
+                to={action.href}
+                className={`bg-${action.color}-900/50 border border-${action.color}-700 rounded-lg p-6 hover:bg-${action.color}-900/70 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl group`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className={`font-semibold text-${action.color}-300`}>{action.title}</h3>
+                    <p className={`text-sm text-${action.color}-400 mt-1`}>{action.description}</p>
+                  </div>
+                  <Icon className={`w-6 h-6 text-${action.color}-400 group-hover:scale-110 transition-transform duration-300`} />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </Layout>

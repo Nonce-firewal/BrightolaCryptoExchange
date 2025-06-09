@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Gift } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Gift, Eye, EyeOff } from 'lucide-react';
+import AnimatedPage from '../../components/AnimatedPage';
+import AnimatedInput from '../../components/AnimatedInput';
+import AnimatedButton from '../../components/AnimatedButton';
+import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 
 const RegisterPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -15,10 +19,15 @@ const RegisterPage: React.FC = () => {
     referralCode: referralCode,
     agreeToTerms: false
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const { ref: logoRef, isVisible: logoVisible } = useScrollAnimation();
+  const { ref: formRef, isVisible: formVisible } = useScrollAnimation({ threshold: 0.2 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,22 +69,41 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <AnimatedPage className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <Link to="/" className="flex items-center justify-center mb-6">
+          <div 
+            ref={logoRef}
+            className={`flex items-center justify-center mb-6 transition-all duration-1000 ${
+              logoVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+            }`}
+          >
             <div className="text-2xl font-bold">
               <span className="text-white">BRIGHTOLA</span>
               <span className="text-orange-500">X</span>
             </div>
-          </Link>
-          <h2 className="text-3xl font-bold text-white">Create your account</h2>
-          <p className="mt-2 text-gray-400">Start trading crypto with Nigerian Naira</p>
+          </div>
+          
+          <div className={`transition-all duration-1000 delay-300 ${
+            logoVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
+            <h2 className="text-3xl font-bold text-white">Create your account</h2>
+            <p className="mt-2 text-gray-400">Start trading crypto with Nigerian Naira</p>
+          </div>
         </div>
 
         {referralCode && (
-          <div className="bg-green-900/50 border border-green-700 rounded-lg p-4 flex items-center">
-            <Gift className="w-5 h-5 text-green-400 mr-3" />
+          <div className={`bg-green-900/50 border border-green-700 rounded-lg p-4 flex items-center transition-all duration-1000 delay-500 ${
+            logoVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
+            <Gift className="w-5 h-5 text-green-400 mr-3 animate-bounce" />
             <div className="text-sm">
               <p className="text-green-300 font-medium">Referral Code Applied!</p>
               <p className="text-green-400">You were referred by: {referralCode}</p>
@@ -83,165 +111,155 @@ const RegisterPage: React.FC = () => {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 flex items-center">
-              <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
-              <span className="text-red-300">{error}</span>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Enter your full name"
-                />
+        <div 
+          ref={formRef}
+          className={`bg-gray-800 rounded-2xl p-8 border border-gray-700 shadow-2xl transition-all duration-1000 delay-700 ${
+            formVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 flex items-center animate-shake">
+                <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
+                <span className="text-red-300">{error}</span>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
+            <div className="space-y-4">
+              <AnimatedInput
+                id="name"
+                name="name"
+                type="text"
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={handleInputChange}
+                icon={User}
+                required
+              />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
+              <AnimatedInput
+                id="email"
+                name="email"
+                type="email"
+                label="Email Address"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                icon={Mail}
+                required
+              />
+
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
+                <AnimatedInput
                   id="password"
                   name="password"
-                  type="password"
-                  required
+                  type={showPassword ? 'text' : 'password'}
+                  label="Password"
+                  placeholder="Create a password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Create a password"
+                  icon={Lock}
+                  required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-300 transition-colors duration-300"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
-                Confirm Password
-              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
+                <AnimatedInput
                   id="confirmPassword"
                   name="confirmPassword"
-                  type="password"
-                  required
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  label="Confirm Password"
+                  placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Confirm your password"
+                  icon={Lock}
+                  required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-300 transition-colors duration-300"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
+
+              <AnimatedInput
+                id="referralCode"
+                name="referralCode"
+                type="text"
+                label="Referral Code (Optional)"
+                placeholder="Enter referral code (if any)"
+                value={formData.referralCode}
+                onChange={handleInputChange}
+                icon={Gift}
+              />
             </div>
 
-            <div>
-              <label htmlFor="referralCode" className="block text-sm font-medium text-gray-300 mb-2">
-                Referral Code (Optional)
+            <div className="flex items-center">
+              <input
+                id="agreeToTerms"
+                name="agreeToTerms"
+                type="checkbox"
+                required
+                checked={formData.agreeToTerms}
+                onChange={handleInputChange}
+                className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-600 bg-gray-800 rounded transition-all duration-300"
+              />
+              <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-300">
+                I agree to the{' '}
+                <a href="#" className="text-orange-500 hover:text-orange-400 transition-colors duration-300">
+                  Terms and Conditions
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-orange-500 hover:text-orange-400 transition-colors duration-300">
+                  Privacy Policy
+                </a>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Gift className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  id="referralCode"
-                  name="referralCode"
-                  type="text"
-                  value={formData.referralCode}
-                  onChange={handleInputChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Enter referral code (if any)"
-                />
-              </div>
             </div>
-          </div>
 
-          <div className="flex items-center">
-            <input
-              id="agreeToTerms"
-              name="agreeToTerms"
-              type="checkbox"
-              required
-              checked={formData.agreeToTerms}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-600 bg-gray-800 rounded"
-            />
-            <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-300">
-              I agree to the{' '}
-              <a href="#" className="text-orange-500 hover:text-orange-400">
-                Terms and Conditions
-              </a>{' '}
-              and{' '}
-              <a href="#" className="text-orange-500 hover:text-orange-400">
-                Privacy Policy
-              </a>
-            </label>
-          </div>
+            <AnimatedButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              icon={ArrowRight}
+              loading={loading}
+              className="w-full"
+            >
+              {loading ? 'Creating account...' : 'Create Account'}
+            </AnimatedButton>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? (
-              'Creating account...'
-            ) : (
-              <>
-                Create Account
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
+            <div className="text-center">
+              <span className="text-gray-400">Already have an account? </span>
+              <Link 
+                to="/login" 
+                className="font-medium text-orange-500 hover:text-orange-400 transition-colors duration-300"
+              >
+                Sign in
+              </Link>
+            </div>
+          </form>
+        </div>
+      </AnimatedPage>
 
-          <div className="text-center">
-            <span className="text-gray-400">Already have an account? </span>
-            <Link to="/login" className="font-medium text-orange-500 hover:text-orange-400">
-              Sign in
-            </Link>
-          </div>
-        </form>
-      </div>
+      <style jsx>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };
