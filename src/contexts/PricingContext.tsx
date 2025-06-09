@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAdmin } from './AdminContext';
 
 interface CoinPrice {
   symbol: string;
   priceUSD: number;
   priceNGN: number;
   change24h: number;
+  buyEnabled?: boolean;
+  sellEnabled?: boolean;
+  buyMargin?: number;
+  sellMargin?: number;
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 interface PricingContextType {
@@ -27,6 +34,7 @@ export const usePricing = () => {
 };
 
 export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { getAllActiveTokens } = useAdmin();
   const [prices, setPrices] = useState<Record<string, CoinPrice>>({});
   const [usdToNgnRate, setUsdToNgnRate] = useState(1650); // Default rate
   const [buyMargin, setBuyMargin] = useState(2); // 2% buy margin
@@ -37,35 +45,28 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setLoading(true);
       
-      // Mock data - in real implementation, use CoinMarketCap API
-      const mockPrices = {
-        BTC: {
-          symbol: 'BTC',
-          priceUSD: 45000,
-          priceNGN: 45000 * usdToNgnRate,
-          change24h: 2.5
-        },
-        ETH: {
-          symbol: 'ETH',
-          priceUSD: 3200,
-          priceNGN: 3200 * usdToNgnRate,
-          change24h: -1.2
-        },
-        USDT: {
-          symbol: 'USDT',
-          priceUSD: 1,
-          priceNGN: 1 * usdToNgnRate,
-          change24h: 0.1
-        },
-        SOL: {
-          symbol: 'SOL',
-          priceUSD: 120,
-          priceNGN: 120 * usdToNgnRate,
-          change24h: 5.8
-        }
-      };
+      // Get all active tokens from admin context
+      const activeTokens = getAllActiveTokens();
+      
+      // Convert to pricing format
+      const pricesData: Record<string, CoinPrice> = {};
+      
+      activeTokens.forEach(token => {
+        pricesData[token.symbol] = {
+          symbol: token.symbol,
+          priceUSD: token.priceUSD,
+          priceNGN: token.priceNGN,
+          change24h: token.change24h,
+          buyEnabled: 'buyEnabled' in token ? token.buyEnabled : true,
+          sellEnabled: 'sellEnabled' in token ? token.sellEnabled : true,
+          buyMargin: 'buyMargin' in token ? token.buyMargin : 2.0,
+          sellMargin: 'sellMargin' in token ? token.sellMargin : 2.0,
+          minAmount: 'minAmount' in token ? token.minAmount : 0.001,
+          maxAmount: 'maxAmount' in token ? token.maxAmount : 100
+        };
+      });
 
-      setPrices(mockPrices);
+      setPrices(pricesData);
     } catch (error) {
       console.error('Failed to fetch prices:', error);
     } finally {
@@ -79,7 +80,7 @@ export const PricingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Refresh prices every 30 seconds
     const interval = setInterval(fetchPrices, 30000);
     return () => clearInterval(interval);
-  }, [usdToNgnRate]);
+  }, [getAllActiveTokens]);
 
   const value: PricingContextType = {
     prices,

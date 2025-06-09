@@ -41,7 +41,7 @@ const BuyCrypto: React.FC = () => {
   const selectedBankAccount = activeBanks.find(bank => bank.id === selectedBank);
 
   const selectedPrice = prices[selectedCrypto];
-  const calculatedAmount = amount ? 
+  const calculatedAmount = amount && selectedPrice ? 
     (amountType === 'naira' ? 
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8) :
       (parseFloat(amount) * selectedPrice?.priceNGN || 0).toLocaleString()
@@ -238,7 +238,7 @@ const BuyCrypto: React.FC = () => {
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.values(prices).map((coin) => (
+                    {Object.values(prices).filter(coin => coin.buyEnabled).map((coin) => (
                       <button
                         key={coin.symbol}
                         onClick={() => setSelectedCrypto(coin.symbol)}
@@ -512,7 +512,7 @@ const BuyCrypto: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.values(prices).map((coin, index) => (
+                  {Object.values(prices).filter(coin => coin.buyEnabled).map((coin, index) => (
                     <div 
                       key={coin.symbol}
                       className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-700/50 transition-all duration-300 cursor-pointer"

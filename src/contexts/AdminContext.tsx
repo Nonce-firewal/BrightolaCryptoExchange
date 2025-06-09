@@ -18,9 +18,48 @@ interface WalletAddress {
   createdAt: string;
 }
 
+interface CustomToken {
+  id: string;
+  symbol: string;
+  name: string;
+  contractAddress: string;
+  network: string;
+  decimals: number;
+  isActive: boolean;
+  buyEnabled: boolean;
+  sellEnabled: boolean;
+  buyMargin: number;
+  sellMargin: number;
+  minAmount: number;
+  maxAmount: number;
+  priceUSD: number;
+  priceNGN: number;
+  change24h: number;
+  createdAt: string;
+}
+
+interface Coin {
+  id: string;
+  symbol: string;
+  name: string;
+  network: string;
+  buyEnabled: boolean;
+  sellEnabled: boolean;
+  buyMargin: number;
+  sellMargin: number;
+  minAmount: number;
+  maxAmount: number;
+  status: 'active' | 'inactive';
+  priceUSD: number;
+  priceNGN: number;
+  change24h: number;
+}
+
 interface AdminSettings {
   bankAccounts: BankAccount[];
   walletAddresses: WalletAddress[];
+  customTokens: CustomToken[];
+  supportedCoins: Coin[];
   tradingSettings: {
     buyEnabled: boolean;
     sellEnabled: boolean;
@@ -46,10 +85,18 @@ interface AdminContextType {
   updateWalletAddress: (wallet: WalletAddress) => void;
   addWalletAddress: (wallet: Omit<WalletAddress, 'id' | 'createdAt'>) => void;
   deleteWalletAddress: (id: string) => void;
+  updateCustomToken: (token: CustomToken) => void;
+  addCustomToken: (token: Omit<CustomToken, 'id' | 'createdAt'>) => void;
+  deleteCustomToken: (id: string) => void;
+  updateCoin: (coin: Coin) => void;
+  addCoin: (coin: Omit<Coin, 'id'>) => void;
+  deleteCoin: (id: string) => void;
   updateTradingSettings: (settings: AdminSettings['tradingSettings']) => void;
   updateKYCSettings: (settings: AdminSettings['kycSettings']) => void;
   getActiveBankAccounts: () => BankAccount[];
   getActiveWalletAddress: (crypto: string, network?: string) => WalletAddress | null;
+  getActiveCoins: () => (Coin | CustomToken)[];
+  getAllActiveTokens: () => (Coin | CustomToken)[];
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -132,6 +179,112 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         createdAt: '2024-01-01T00:00:00Z'
       }
     ],
+    customTokens: [
+      {
+        id: 'token_001',
+        symbol: 'SHIB',
+        name: 'Shiba Inu',
+        contractAddress: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+        network: 'Ethereum',
+        decimals: 18,
+        isActive: true,
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 3.0,
+        sellMargin: 3.0,
+        minAmount: 1000000,
+        maxAmount: 1000000000,
+        priceUSD: 0.000008,
+        priceNGN: 0.0132,
+        change24h: 5.2,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'token_002',
+        symbol: 'PEPE',
+        name: 'Pepe',
+        contractAddress: '0x6982508145454Ce325dDbE47a25d4ec3d2311933',
+        network: 'Ethereum',
+        decimals: 18,
+        isActive: true,
+        buyEnabled: true,
+        sellEnabled: false,
+        buyMargin: 4.0,
+        sellMargin: 4.0,
+        minAmount: 1000000,
+        maxAmount: 10000000000,
+        priceUSD: 0.000001,
+        priceNGN: 0.00165,
+        change24h: -2.1,
+        createdAt: '2024-01-01T00:00:00Z'
+      }
+    ],
+    supportedCoins: [
+      {
+        id: 'coin_001',
+        symbol: 'BTC',
+        name: 'Bitcoin',
+        network: 'Bitcoin',
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 2.0,
+        sellMargin: 2.0,
+        minAmount: 0.001,
+        maxAmount: 10,
+        status: 'active',
+        priceUSD: 45000,
+        priceNGN: 74250000,
+        change24h: 2.5
+      },
+      {
+        id: 'coin_002',
+        symbol: 'ETH',
+        name: 'Ethereum',
+        network: 'Ethereum',
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 1.5,
+        sellMargin: 1.5,
+        minAmount: 0.01,
+        maxAmount: 100,
+        status: 'active',
+        priceUSD: 3200,
+        priceNGN: 5280000,
+        change24h: -1.2
+      },
+      {
+        id: 'coin_003',
+        symbol: 'USDT',
+        name: 'Tether',
+        network: 'Ethereum',
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 1.0,
+        sellMargin: 1.0,
+        minAmount: 10,
+        maxAmount: 50000,
+        status: 'active',
+        priceUSD: 1,
+        priceNGN: 1650,
+        change24h: 0.1
+      },
+      {
+        id: 'coin_004',
+        symbol: 'SOL',
+        name: 'Solana',
+        network: 'Solana',
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 2.5,
+        sellMargin: 2.5,
+        minAmount: 0.1,
+        maxAmount: 1000,
+        status: 'active',
+        priceUSD: 120,
+        priceNGN: 198000,
+        change24h: 5.8
+      }
+    ],
     tradingSettings: {
       buyEnabled: true,
       sellEnabled: true,
@@ -201,6 +354,57 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  const updateCustomToken = (token: CustomToken) => {
+    setSettings(prev => ({
+      ...prev,
+      customTokens: prev.customTokens.map(t => t.id === token.id ? token : t)
+    }));
+  };
+
+  const addCustomToken = (token: Omit<CustomToken, 'id' | 'createdAt'>) => {
+    const newToken: CustomToken = {
+      ...token,
+      id: 'token_' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setSettings(prev => ({
+      ...prev,
+      customTokens: [...prev.customTokens, newToken]
+    }));
+  };
+
+  const deleteCustomToken = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      customTokens: prev.customTokens.filter(t => t.id !== id)
+    }));
+  };
+
+  const updateCoin = (coin: Coin) => {
+    setSettings(prev => ({
+      ...prev,
+      supportedCoins: prev.supportedCoins.map(c => c.id === coin.id ? coin : c)
+    }));
+  };
+
+  const addCoin = (coin: Omit<Coin, 'id'>) => {
+    const newCoin: Coin = {
+      ...coin,
+      id: 'coin_' + Date.now()
+    };
+    setSettings(prev => ({
+      ...prev,
+      supportedCoins: [...prev.supportedCoins, newCoin]
+    }));
+  };
+
+  const deleteCoin = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      supportedCoins: prev.supportedCoins.filter(c => c.id !== id)
+    }));
+  };
+
   const updateTradingSettings = (tradingSettings: AdminSettings['tradingSettings']) => {
     setSettings(prev => ({ ...prev, tradingSettings }));
   };
@@ -220,6 +424,16 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return wallets.length > 0 ? wallets[0] : null;
   };
 
+  const getActiveCoins = () => {
+    return settings.supportedCoins.filter(coin => coin.status === 'active');
+  };
+
+  const getAllActiveTokens = () => {
+    const activeCoins = settings.supportedCoins.filter(coin => coin.status === 'active');
+    const activeTokens = settings.customTokens.filter(token => token.isActive);
+    return [...activeCoins, ...activeTokens];
+  };
+
   const value: AdminContextType = {
     settings,
     updateBankAccount,
@@ -228,10 +442,18 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateWalletAddress,
     addWalletAddress,
     deleteWalletAddress,
+    updateCustomToken,
+    addCustomToken,
+    deleteCustomToken,
+    updateCoin,
+    addCoin,
+    deleteCoin,
     updateTradingSettings,
     updateKYCSettings,
     getActiveBankAccounts,
-    getActiveWalletAddress
+    getActiveWalletAddress,
+    getActiveCoins,
+    getAllActiveTokens
   };
 
   return (

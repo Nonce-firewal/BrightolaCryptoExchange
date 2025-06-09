@@ -44,7 +44,7 @@ const SellCrypto: React.FC = () => {
   const { ref: portfolioRef, isVisible: portfolioVisible } = useScrollAnimation();
 
   const selectedPrice = prices[selectedCrypto];
-  const calculatedAmount = amount ? 
+  const calculatedAmount = amount && selectedPrice ? 
     (amountType === 'crypto' ? 
       (parseFloat(amount) * selectedPrice?.priceNGN || 0).toLocaleString() :
       (parseFloat(amount) / selectedPrice?.priceNGN || 0).toFixed(8)
@@ -187,6 +187,7 @@ const SellCrypto: React.FC = () => {
         <div 
           ref={headerRef}
           className={`bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-6 transition-all duration-1000 ${
+            
             headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
@@ -236,7 +237,7 @@ const SellCrypto: React.FC = () => {
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-300 mb-3">Select Cryptocurrency</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.values(prices).map((coin) => {
+                    {Object.values(prices).filter(coin => coin.sellEnabled).map((coin) => {
                       const portfolioItem = portfolio.find(p => p.symbol === coin.symbol);
                       const hasWallet = getActiveWalletAddress(coin.symbol);
                       return (
@@ -547,15 +548,17 @@ const SellCrypto: React.FC = () => {
               <div className="space-y-3">
                 {portfolio.map((item, index) => {
                   const hasWallet = getActiveWalletAddress(item.symbol);
+                  const coinPrice = prices[item.symbol];
+                  const canSell = coinPrice?.sellEnabled && hasWallet;
                   return (
                     <div 
                       key={item.symbol}
                       className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
-                        hasWallet 
+                        canSell 
                           ? 'hover:bg-gray-700/50 cursor-pointer' 
                           : 'opacity-50 cursor-not-allowed'
                       }`}
-                      onClick={() => hasWallet && setSelectedCrypto(item.symbol)}
+                      onClick={() => canSell && setSelectedCrypto(item.symbol)}
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <div className="flex items-center space-x-3">
@@ -567,6 +570,9 @@ const SellCrypto: React.FC = () => {
                           <div className="text-gray-400 text-xs">{item.amount} {item.symbol}</div>
                           {!hasWallet && (
                             <div className="text-red-400 text-xs">No wallet available</div>
+                          )}
+                          {!coinPrice?.sellEnabled && hasWallet && (
+                            <div className="text-yellow-400 text-xs">Selling disabled</div>
                           )}
                         </div>
                       </div>
@@ -602,7 +608,7 @@ const SellCrypto: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.values(prices).map((coin, index) => {
+                  {Object.values(prices).filter(coin => coin.sellEnabled).map((coin, index) => {
                     const hasWallet = getActiveWalletAddress(coin.symbol);
                     return (
                       <div 
