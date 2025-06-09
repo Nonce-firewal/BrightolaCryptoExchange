@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePricing } from '../../contexts/PricingContext';
@@ -15,7 +16,6 @@ import {
   Sparkles,
   Zap
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useScrollAnimation, useStaggeredAnimation } from '../../hooks/useScrollAnimation';
 import AnimatedButton from '../../components/AnimatedButton';
 import AnimatedCard from '../../components/AnimatedCard';
@@ -148,22 +148,24 @@ const Dashboard: React.FC = () => {
             <div className={`mt-4 lg:mt-0 flex space-x-4 transition-all duration-700 delay-900 ${
               headerVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}>
-              <AnimatedButton
-                variant="success"
-                icon={ArrowDownRight}
-                onClick={() => window.location.href = '/buy'}
-                hoverEffect="glow"
-              >
-                Buy Crypto
-              </AnimatedButton>
-              <AnimatedButton
-                variant="primary"
-                icon={ArrowUpRight}
-                onClick={() => window.location.href = '/sell'}
-                hoverEffect="glow"
-              >
-                Sell Crypto
-              </AnimatedButton>
+              <Link to="/buy">
+                <AnimatedButton
+                  variant="success"
+                  icon={ArrowDownRight}
+                  hoverEffect="glow"
+                >
+                  Buy Crypto
+                </AnimatedButton>
+              </Link>
+              <Link to="/sell">
+                <AnimatedButton
+                  variant="primary"
+                  icon={ArrowUpRight}
+                  hoverEffect="glow"
+                >
+                  Sell Crypto
+                </AnimatedButton>
+              </Link>
             </div>
           </div>
         </div>
