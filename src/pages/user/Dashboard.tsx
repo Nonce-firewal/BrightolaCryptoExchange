@@ -4,6 +4,7 @@ import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePricing } from '../../contexts/PricingContext';
 import RefreshButton from '../../components/RefreshButton';
+import MarketPreviewModal from '../../components/MarketPreviewModal';
 import { CryptoLogo } from '../../utils/cryptoLogos';
 import { 
   TrendingUp, 
@@ -19,7 +20,9 @@ import {
   Zap,
   RefreshCw,
   Wifi,
-  WifiOff
+  WifiOff,
+  Eye,
+  BarChart3
 } from 'lucide-react';
 import { useScrollAnimation, useStaggeredAnimation } from '../../hooks/useScrollAnimation';
 import AnimatedButton from '../../components/AnimatedButton';
@@ -30,6 +33,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { prices, loading, refreshPrices, lastUpdated } = usePricing();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showMarketModal, setShowMarketModal] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: statsRef, visibleItems: visibleStats } = useStaggeredAnimation(3, 150);
@@ -118,6 +122,11 @@ const Dashboard: React.FC = () => {
 
   // Check if prices are real-time or fallback
   const isRealTimeData = lastUpdated && (Date.now() - lastUpdated.getTime()) < 60000; // Within last minute
+
+  // Get top 4 coins by price change for preview
+  const topCoins = Object.values(prices)
+    .sort((a, b) => b.change24h - a.change24h)
+    .slice(0, 4);
 
   return (
     <Layout>
@@ -308,6 +317,14 @@ const Dashboard: React.FC = () => {
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
+              <AnimatedButton
+                variant="secondary"
+                icon={BarChart3}
+                size="sm"
+                onClick={() => setShowMarketModal(true)}
+              >
+                View All
+              </AnimatedButton>
             </div>
           </div>
 
@@ -317,44 +334,69 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.values(prices).map((coin, index) => (
-                <div 
-                  key={coin.symbol} 
-                  className={`flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-all duration-300 transform hover:scale-[1.02] group cursor-pointer ${
-                    marketVisible ? 'animate-slideInFromLeft' : ''
-                  }`}
-                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
-                >
-                  <div className="flex items-center space-x-4">
-                    <CryptoLogo 
-                      symbol={coin.symbol} 
-                      size={40} 
-                      className="group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" 
-                    />
-                    <div>
-                      <p className="font-semibold text-white group-hover:text-orange-400 transition-colors">
-                        {coin.symbol}
-                      </p>
-                      <p className="text-sm text-gray-400">${coin.priceUSD.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-white group-hover:text-orange-400 transition-colors">
-                      ₦{coin.priceNGN.toLocaleString()}
-                    </p>
-                    <div className="flex items-center text-sm">
-                      {coin.change24h >= 0 ? (
-                        <TrendingUp className="w-3 h-3 text-green-400 mr-1 group-hover:animate-bounce" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3 text-red-400 mr-1 group-hover:animate-bounce" />
-                      )}
-                      <span className={`${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'} group-hover:font-semibold transition-all`}>
-                        {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
-                      </span>
-                    </div>
-                  </div>
+              {/* Top 4 Coins Preview */}
+              <div className="mb-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Zap className="w-4 h-4 text-orange-400" />
+                  <h3 className="text-sm font-medium text-gray-300">Top Performers (24h)</h3>
                 </div>
-              ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {topCoins.map((coin, index) => (
+                    <div 
+                      key={coin.symbol} 
+                      className={`flex items-center justify-between p-3 border border-gray-700 rounded-lg hover:bg-gray-700/50 transition-all duration-300 transform hover:scale-[1.02] group cursor-pointer bg-gradient-to-r from-orange-500/5 to-transparent ${
+                        marketVisible ? 'animate-slideInFromLeft' : ''
+                      }`}
+                      style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
+                      onClick={() => setShowMarketModal(true)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-5 h-5 bg-orange-500 text-white rounded-full text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <CryptoLogo 
+                          symbol={coin.symbol} 
+                          size={32} 
+                          className="group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" 
+                        />
+                        <div>
+                          <p className="font-semibold text-white group-hover:text-orange-400 transition-colors text-sm">
+                            {coin.symbol}
+                          </p>
+                          <p className="text-xs text-gray-400">${coin.priceUSD.toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-white group-hover:text-orange-400 transition-colors text-sm">
+                          ₦{coin.priceNGN.toLocaleString()}
+                        </p>
+                        <div className="flex items-center text-xs">
+                          {coin.change24h >= 0 ? (
+                            <TrendingUp className="w-3 h-3 text-green-400 mr-1 group-hover:animate-bounce" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3 text-red-400 mr-1 group-hover:animate-bounce" />
+                          )}
+                          <span className={`${coin.change24h >= 0 ? 'text-green-400' : 'text-red-400'} group-hover:font-semibold transition-all font-bold`}>
+                            {coin.change24h >= 0 ? '+' : ''}{coin.change24h.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* View All Button */}
+              <div className="flex justify-center pt-4 border-t border-gray-700">
+                <AnimatedButton
+                  variant="primary"
+                  icon={Eye}
+                  onClick={() => setShowMarketModal(true)}
+                  className="w-full max-w-xs"
+                >
+                  View All {Object.keys(prices).length} Coins
+                </AnimatedButton>
+              </div>
             </div>
           )}
         </AnimatedCard>
@@ -424,6 +466,12 @@ const Dashboard: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Market Preview Modal */}
+        <MarketPreviewModal 
+          isOpen={showMarketModal}
+          onClose={() => setShowMarketModal(false)}
+        />
       </div>
 
       <style jsx>{`
