@@ -134,10 +134,10 @@ const Dashboard: React.FC = () => {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        {/* Header with enhanced animations and gradient */}
+        {/* Header with enhanced animations and vibrant gradient */}
         <div 
           ref={headerRef}
-          className={`bg-gradient-to-br from-gray-800/90 via-gray-700/80 to-gray-800/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-600/50 p-6 transition-all duration-1000 transform ${
+          className={`bg-gradient-to-br from-orange-900/60 via-orange-800/40 to-red-900/60 backdrop-blur-sm rounded-xl shadow-sm border border-orange-600/30 p-6 transition-all duration-1000 transform ${
             headerVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
           }`}
         >
@@ -163,16 +163,16 @@ const Dashboard: React.FC = () => {
                   </>
                 )}
               </h1>
-              <p className={`text-gray-400 mt-1 transition-all duration-700 delay-500 ${
+              <p className={`text-gray-300 mt-1 transition-all duration-700 delay-500 ${
                 headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}>
                 Here's what's happening with your crypto portfolio today.
               </p>
-              <p className={`text-sm text-gray-400 mt-2 transition-all duration-700 delay-700 ${
+              <p className={`text-sm text-gray-300 mt-2 transition-all duration-700 delay-700 ${
                 headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}>
                 Your Referral Code: 
-                <span className="font-mono font-semibold text-orange-500 ml-1 hover:text-orange-400 transition-colors cursor-pointer">
+                <span className="font-mono font-semibold text-orange-400 ml-1 hover:text-orange-300 transition-colors cursor-pointer">
                   {user?.referralCode}
                 </span>
               </p>
