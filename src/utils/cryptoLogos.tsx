@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Cryptocurrency logo URLs from reliable CDN sources
 export const CRYPTO_LOGOS: Record<string, string> = {
   // Major cryptocurrencies
