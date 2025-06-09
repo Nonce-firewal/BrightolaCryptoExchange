@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePricing } from '../../contexts/PricingContext';
+import RefreshButton from '../../components/RefreshButton';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -14,7 +15,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
-  Zap
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 import { useScrollAnimation, useStaggeredAnimation } from '../../hooks/useScrollAnimation';
 import AnimatedButton from '../../components/AnimatedButton';
@@ -23,12 +25,24 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { prices, loading } = usePricing();
+  const { prices, loading, refreshPrices } = usePricing();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: statsRef, visibleItems: visibleStats } = useStaggeredAnimation(3, 150);
   const { ref: marketRef, isVisible: marketVisible } = useScrollAnimation({ delay: 300 });
   const { ref: actionsRef, visibleItems: visibleActions } = useStaggeredAnimation(4, 100);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshPrices();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const kycStatusConfig = {
     'not-submitted': {
@@ -148,6 +162,11 @@ const Dashboard: React.FC = () => {
             <div className={`mt-4 lg:mt-0 flex space-x-4 transition-all duration-700 delay-900 ${
               headerVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}>
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                size="sm"
+              />
               <Link to="/buy">
                 <AnimatedButton
                   variant="success"
@@ -255,10 +274,17 @@ const Dashboard: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Market Overview</h2>
-            <span className="text-sm text-gray-400 flex items-center">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-              Live prices
-            </span>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-gray-400 flex items-center">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                Live prices
+              </span>
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                size="sm"
+              />
+            </div>
           </div>
 
           {loading ? (

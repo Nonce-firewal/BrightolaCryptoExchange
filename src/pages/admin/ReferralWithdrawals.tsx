@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import { useReferral } from '../../contexts/ReferralContext';
+import RefreshButton from '../../components/RefreshButton';
 import { 
   Search, 
   Filter, 
@@ -22,7 +24,8 @@ import {
   Banknote,
   Users,
   TrendingUp,
-  Wallet
+  Wallet,
+  RefreshCw
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 
@@ -51,103 +54,15 @@ interface WithdrawalRequest {
 }
 
 const ReferralWithdrawals: React.FC = () => {
+  const { withdrawalRequests, refreshData } = useReferral();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-
-  // Enhanced mock withdrawal data
-  const withdrawalRequests: WithdrawalRequest[] = [
-    {
-      id: 'WDR001',
-      userId: 'user_001',
-      userName: 'John Doe',
-      userEmail: 'john@example.com',
-      amount: 45000,
-      bankDetails: {
-        accountName: 'John Doe',
-        accountNumber: '1234567890',
-        bankName: 'First Bank of Nigeria'
-      },
-      status: 'pending',
-      requestedAt: '2024-01-15T10:30:00Z',
-      referenceNumber: 'REF001WDR240115',
-      userReferralStats: {
-        totalEarnings: 125000,
-        totalReferrals: 12,
-        activeReferrals: 8
-      }
-    },
-    {
-      id: 'WDR002',
-      userId: 'user_002',
-      userName: 'Jane Smith',
-      userEmail: 'jane@example.com',
-      amount: 25000,
-      bankDetails: {
-        accountName: 'Jane Smith',
-        accountNumber: '0987654321',
-        bankName: 'GTBank'
-      },
-      status: 'approved',
-      requestedAt: '2024-01-14T14:20:00Z',
-      processedAt: '2024-01-14T16:45:00Z',
-      adminNotes: 'Verified user with good referral history. Approved for payment.',
-      referenceNumber: 'REF002WDR240114',
-      userReferralStats: {
-        totalEarnings: 85000,
-        totalReferrals: 8,
-        activeReferrals: 6
-      }
-    },
-    {
-      id: 'WDR003',
-      userId: 'user_003',
-      userName: 'Mike Johnson',
-      userEmail: 'mike@example.com',
-      amount: 15000,
-      bankDetails: {
-        accountName: 'Mike Johnson',
-        accountNumber: '1122334455',
-        bankName: 'Access Bank'
-      },
-      status: 'paid',
-      requestedAt: '2024-01-13T09:15:00Z',
-      processedAt: '2024-01-13T15:30:00Z',
-      adminNotes: 'Payment processed successfully via bank transfer.',
-      referenceNumber: 'REF003WDR240113',
-      userReferralStats: {
-        totalEarnings: 65000,
-        totalReferrals: 5,
-        activeReferrals: 4
-      }
-    },
-    {
-      id: 'WDR004',
-      userId: 'user_004',
-      userName: 'Sarah Wilson',
-      userEmail: 'sarah@example.com',
-      amount: 8000,
-      bankDetails: {
-        accountName: 'Sarah Wilson',
-        accountNumber: '5566778899',
-        bankName: 'UBA'
-      },
-      status: 'rejected',
-      requestedAt: '2024-01-12T16:45:00Z',
-      processedAt: '2024-01-12T18:20:00Z',
-      rejectionReason: 'Bank account name does not match user profile name. Please update and resubmit.',
-      referenceNumber: 'REF004WDR240112',
-      userReferralStats: {
-        totalEarnings: 35000,
-        totalReferrals: 3,
-        activeReferrals: 2
-      }
-    }
-  ];
 
   const filteredRequests = withdrawalRequests.filter(request => {
     const matchesSearch = request.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -191,6 +106,7 @@ const ReferralWithdrawals: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log(`Updating withdrawal ${withdrawalId} to status: ${newStatus}`);
+    handleRefresh();
     
     setIsUpdating(false);
     setSelectedWithdrawal(null);
@@ -214,6 +130,7 @@ const ReferralWithdrawals: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log(`Rejecting withdrawal ${withdrawalId}: ${rejectionReason}`);
+    handleRefresh();
     
     setRejectionReason('');
     setIsUpdating(false);
@@ -227,9 +144,21 @@ const ReferralWithdrawals: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log(`Adding notes to withdrawal ${withdrawalId}: ${adminNotes}`);
+    handleRefresh();
     
     setAdminNotes('');
     setIsUpdating(false);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Calculate stats
@@ -249,6 +178,10 @@ const ReferralWithdrawals: React.FC = () => {
               <p className="text-gray-400 mt-1">Manage referral commission withdrawal requests</p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+              />
               <AnimatedButton
                 variant="secondary"
                 icon={Download}
@@ -687,6 +620,11 @@ const ReferralWithdrawals: React.FC = () => {
                   >
                     Contact User
                   </AnimatedButton>
+                  <RefreshButton 
+                    onRefresh={handleRefresh} 
+                    loading={isRefreshing}
+                    size="sm"
+                  />
                   <AnimatedButton
                     variant="primary"
                     onClick={() => setSelectedWithdrawal(null)}
@@ -705,6 +643,13 @@ const ReferralWithdrawals: React.FC = () => {
             <ArrowUpRight className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No withdrawal requests found</h3>
             <p className="text-gray-400">Try adjusting your search criteria or filters.</p>
+            <div className="mt-4">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                variant="primary"
+              />
+            </div>
           </div>
         )}
       </div>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../../components/Layout';
+import { useData } from '../../contexts/DataContext';
+import RefreshButton from '../../components/RefreshButton';
 import { 
   History, 
   Search, 
@@ -23,7 +25,8 @@ import {
   Building,
   MessageCircle,
   Shield,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 import AnimatedButton from '../../components/AnimatedButton';
@@ -34,7 +37,7 @@ interface Transaction {
   cryptocurrency: string;
   amount: number;
   amountNGN: number;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'awaiting_payment' | 'awaiting_crypto' | 'under_review';
   date: string;
   fee: number;
   rate: number;
@@ -58,11 +61,13 @@ interface Transaction {
 }
 
 const TransactionHistory: React.FC = () => {
+  const { transactions, refreshData } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
@@ -74,128 +79,21 @@ const TransactionHistory: React.FC = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // Enhanced mock transaction data with detailed information
-  const transactions: Transaction[] = [
-    {
-      id: 'TXN001',
-      type: 'buy',
-      cryptocurrency: 'BTC',
-      amount: 0.5,
-      amountNGN: 37500000,
-      status: 'completed',
-      date: '2024-01-15T10:30:00Z',
-      fee: 750000,
-      rate: 75000000,
-      network: 'Bitcoin',
-      walletAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      bankDetails: {
-        accountName: 'Brightola Exchange Limited',
-        accountNumber: '2034567890',
-        bankName: 'First Bank of Nigeria'
-      },
-      paymentMethod: 'Bank Transfer',
-      confirmations: 6,
-      txHash: '1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z',
-      processingTime: '15 minutes',
-      completedAt: '2024-01-15T10:45:00Z',
-      referenceNumber: 'REF001BTC240115',
-      customerNotes: 'First Bitcoin purchase'
-    },
-    {
-      id: 'TXN002',
-      type: 'sell',
-      cryptocurrency: 'ETH',
-      amount: 2.0,
-      amountNGN: 10560000,
-      status: 'pending',
-      date: '2024-01-15T14:20:00Z',
-      fee: 211200,
-      rate: 5280000,
-      network: 'Ethereum',
-      walletAddress: '0x742d35Cc6634C0532925a3b8D4C2C4e4C4C4C4C4',
-      bankDetails: {
-        accountName: 'John Doe',
-        accountNumber: '1234567890',
-        bankName: 'GTBank'
-      },
-      paymentMethod: 'Bank Transfer',
-      confirmations: 2,
-      processingTime: 'In progress',
-      referenceNumber: 'REF002ETH240115',
-      adminNotes: 'Awaiting blockchain confirmation',
-      customerNotes: 'Urgent sale for emergency'
-    },
-    {
-      id: 'TXN003',
-      type: 'buy',
-      cryptocurrency: 'USDT',
-      amount: 1000,
-      amountNGN: 1650000,
-      status: 'completed',
-      date: '2024-01-15T09:15:00Z',
-      fee: 33000,
-      rate: 1650,
-      network: 'Ethereum (ERC-20)',
-      walletAddress: '0x742d35Cc6634C0532925a3b8D4C2C4e4C4C4C4C4',
-      bankDetails: {
-        accountName: 'Brightola Exchange Limited',
-        accountNumber: '0123456789',
-        bankName: 'Guaranty Trust Bank'
-      },
-      paymentMethod: 'Bank Transfer',
-      confirmations: 12,
-      txHash: '0xa1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6',
-      processingTime: '5 minutes',
-      completedAt: '2024-01-15T09:20:00Z',
-      referenceNumber: 'REF003USDT240115'
-    },
-    {
-      id: 'TXN004',
-      type: 'sell',
-      cryptocurrency: 'SOL',
-      amount: 10,
-      amountNGN: 1980000,
-      status: 'failed',
-      date: '2024-01-14T16:45:00Z',
-      fee: 39600,
-      rate: 198000,
-      network: 'Solana',
-      walletAddress: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-      bankDetails: {
-        accountName: 'Jane Smith',
-        accountNumber: '9876543210',
-        bankName: 'Access Bank'
-      },
-      paymentMethod: 'Bank Transfer',
-      processingTime: '2 hours',
-      failureReason: 'Insufficient wallet balance',
-      referenceNumber: 'REF004SOL240114',
-      adminNotes: 'Customer notified to check wallet balance',
-      customerNotes: 'Please retry transaction'
-    },
-    {
-      id: 'TXN005',
-      type: 'buy',
-      cryptocurrency: 'BTC',
-      amount: 0.25,
-      amountNGN: 18750000,
-      status: 'cancelled',
-      date: '2024-01-14T11:20:00Z',
-      fee: 0,
-      rate: 75000000,
-      network: 'Bitcoin',
-      paymentMethod: 'Bank Transfer',
-      processingTime: '1 hour',
-      failureReason: 'Customer requested cancellation',
-      referenceNumber: 'REF005BTC240114',
-      adminNotes: 'Cancelled by customer before payment',
-      customerNotes: 'Changed mind about purchase'
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
     }
-  ];
+  };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.cryptocurrency.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = transaction.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.cryptocurrency?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.referenceNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
     const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
     
@@ -206,6 +104,9 @@ const TransactionHistory: React.FC = () => {
     switch (status) {
       case 'completed': return 'text-green-400 bg-green-900/20 border-green-700';
       case 'pending': return 'text-yellow-400 bg-yellow-900/20 border-yellow-700';
+      case 'awaiting_payment': return 'text-blue-400 bg-blue-900/20 border-blue-700';
+      case 'awaiting_crypto': return 'text-purple-400 bg-purple-900/20 border-purple-700';
+      case 'under_review': return 'text-orange-400 bg-orange-900/20 border-orange-700';
       case 'failed': return 'text-red-400 bg-red-900/20 border-red-700';
       case 'cancelled': return 'text-gray-400 bg-gray-900/20 border-gray-700';
       default: return 'text-gray-400 bg-gray-900/20 border-gray-700';
@@ -216,6 +117,9 @@ const TransactionHistory: React.FC = () => {
     switch (status) {
       case 'completed': return CheckCircle;
       case 'pending': return Clock;
+      case 'awaiting_payment': return CreditCard;
+      case 'awaiting_crypto': return Wallet;
+      case 'under_review': return Eye;
       case 'failed': return XCircle;
       case 'cancelled': return AlertTriangle;
       default: return Clock;
@@ -251,6 +155,10 @@ const TransactionHistory: React.FC = () => {
               <p className="text-gray-400 mt-1">View and manage all your crypto transactions</p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+              />
               <AnimatedButton
                 variant="secondary"
                 icon={Calendar}
@@ -343,6 +251,9 @@ const TransactionHistory: React.FC = () => {
               className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Status</option>
+              <option value="under_review">Under Review</option>
+              <option value="awaiting_payment">Awaiting Payment</option>
+              <option value="awaiting_crypto">Awaiting Crypto</option>
               <option value="completed">Completed</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
@@ -457,7 +368,7 @@ const TransactionHistory: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(transaction.status)}`}>
                           <StatusIcon className="w-3 h-3 mr-1" />
-                          {transaction.status}
+                          {transaction.status.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
@@ -490,6 +401,13 @@ const TransactionHistory: React.FC = () => {
             <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No transactions found</h3>
             <p className="text-gray-400">Try adjusting your search criteria or filters.</p>
+            <div className="mt-4">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                variant="primary"
+              />
+            </div>
           </div>
         )}
 
@@ -543,7 +461,7 @@ const TransactionHistory: React.FC = () => {
                       })}
                     </div>
                     <span className={`inline-flex items-center px-2 py-1 text-sm font-semibold rounded-full border ${getStatusColor(selectedTransaction.status)}`}>
-                      {selectedTransaction.status}
+                      {selectedTransaction.status.replace('_', ' ')}
                     </span>
                   </div>
                   
@@ -552,7 +470,7 @@ const TransactionHistory: React.FC = () => {
                       <span className="text-gray-400 text-sm">Processing Time</span>
                       <Clock className="w-4 h-4 text-blue-400" />
                     </div>
-                    <p className="text-lg font-semibold text-white">{selectedTransaction.processingTime}</p>
+                    <p className="text-lg font-semibold text-white">{selectedTransaction.processingTime || "Pending"}</p>
                   </div>
                 </div>
 
@@ -783,6 +701,11 @@ const TransactionHistory: React.FC = () => {
                       View on Explorer
                     </AnimatedButton>
                   )}
+                  <RefreshButton 
+                    onRefresh={handleRefresh} 
+                    loading={isRefreshing}
+                    size="sm"
+                  />
                   <AnimatedButton
                     variant="primary"
                     onClick={() => setSelectedTransaction(null)}

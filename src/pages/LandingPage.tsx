@@ -1,5 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Shield, 
   TrendingUp, 
@@ -23,8 +24,21 @@ import {
 
 const LandingPage: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const { isAuthenticated, isAdmin } = useAuth();
+  const navigate = useNavigate();
 
-  React.useEffect(() => {
+  // Redirect authenticated users to their respective dashboards
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [isAuthenticated, isAdmin, navigate]);
+
+  useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
       rootMargin: '0px 0px -50px 0px'

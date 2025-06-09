@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../../components/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReferral } from '../../contexts/ReferralContext';
+import RefreshButton from '../../components/RefreshButton';
 import { 
   Users, 
   Gift, 
@@ -25,14 +26,15 @@ import {
   Banknote,
   CreditCard,
   X,
-  Send
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 
 const ReferralDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { stats, earnings, requestWithdrawal, getWithdrawalHistory } = useReferral();
+  const { stats, earnings, requestWithdrawal, getWithdrawalHistory, refreshData } = useReferral();
   const [copied, setCopied] = useState(false);
   const [selectedTier, setSelectedTier] = useState(1);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
@@ -45,6 +47,7 @@ const ReferralDashboard: React.FC = () => {
     bankName: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
@@ -69,6 +72,17 @@ const ReferralDashboard: React.FC = () => {
       });
     } else {
       copyToClipboard();
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -97,6 +111,7 @@ const ReferralDashboard: React.FC = () => {
       setShowWithdrawalModal(false);
       setWithdrawalAmount('');
       setBankDetails({ accountName: '', accountNumber: '', bankName: '' });
+      handleRefresh();
       alert('Withdrawal request submitted successfully! It will be processed within 24-48 hours.');
     } catch (err: any) {
       setError(err.message);
@@ -166,6 +181,11 @@ const ReferralDashboard: React.FC = () => {
               <p className="text-gray-400 mt-1">Earn rewards by inviting friends to trade crypto</p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                size="sm"
+              />
               <AnimatedButton
                 variant="secondary"
                 icon={Copy}
@@ -296,14 +316,21 @@ const ReferralDashboard: React.FC = () => {
               <ArrowUpRight className="w-5 h-5 text-green-400 mr-2" />
               Recent Withdrawals
             </h3>
-            <AnimatedButton
-              variant="secondary"
-              icon={Eye}
-              size="sm"
-              onClick={() => setShowWithdrawalHistory(true)}
-            >
-              View All
-            </AnimatedButton>
+            <div className="flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+                size="sm"
+              />
+              <AnimatedButton
+                variant="secondary"
+                icon={Eye}
+                size="sm"
+                onClick={() => setShowWithdrawalHistory(true)}
+              >
+                View All
+              </AnimatedButton>
+            </div>
           </div>
           
           {withdrawalHistory.length > 0 ? (
@@ -469,12 +496,19 @@ const ReferralDashboard: React.FC = () => {
                   <DollarSign className="w-6 h-6 text-purple-400 mr-2" />
                   Earnings Details
                 </h3>
-                <button
-                  onClick={() => setShowEarningsModal(false)}
-                  className="text-gray-400 hover:text-gray-300"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex space-x-3">
+                  <RefreshButton 
+                    onRefresh={handleRefresh} 
+                    loading={isRefreshing}
+                    size="sm"
+                  />
+                  <button
+                    onClick={() => setShowEarningsModal(false)}
+                    className="text-gray-400 hover:text-gray-300"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -534,12 +568,19 @@ const ReferralDashboard: React.FC = () => {
                   <ArrowUpRight className="w-6 h-6 text-green-400 mr-2" />
                   Withdrawal History
                 </h3>
-                <button
-                  onClick={() => setShowWithdrawalHistory(false)}
-                  className="text-gray-400 hover:text-gray-300"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex space-x-3">
+                  <RefreshButton 
+                    onRefresh={handleRefresh} 
+                    loading={isRefreshing}
+                    size="sm"
+                  />
+                  <button
+                    onClick={() => setShowWithdrawalHistory(false)}
+                    className="text-gray-400 hover:text-gray-300"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">

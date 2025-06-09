@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useData } from '../../contexts/DataContext';
+import RefreshButton from '../../components/RefreshButton';
 import { 
   Search, 
   Filter, 
@@ -25,7 +26,8 @@ import {
   Wallet,
   Edit,
   Save,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import AnimatedButton from '../../components/AnimatedButton';
 
@@ -67,6 +69,7 @@ interface EnhancedTransaction {
 }
 
 const Transactions: React.FC = () => {
+  const { transactions, updateTransactionStatus, refreshData } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -74,133 +77,14 @@ const Transactions: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [failureReason, setFailureReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Enhanced mock transaction data with proof uploads
-  const transactions: EnhancedTransaction[] = [
-    {
-      id: 'TXN001',
-      userId: 'user_001',
-      userName: 'John Doe',
-      userEmail: 'john@example.com',
-      type: 'buy',
-      cryptocurrency: 'BTC',
-      amount: 0.5,
-      amountNGN: 37500000,
-      status: 'under_review',
-      createdAt: '2024-01-15T10:30:00Z',
-      paymentMethod: 'Bank Transfer',
-      bankDetails: {
-        accountName: 'Brightola Exchange Limited',
-        accountNumber: '2034567890',
-        bankName: 'First Bank of Nigeria'
-      },
-      proof: {
-        paymentProof: 'payment_screenshot_001.jpg',
-        transactionReference: 'TRF240115001234',
-        customerNotes: 'First Bitcoin purchase, paid via mobile banking'
-      },
-      fee: 750000,
-      rate: 75000000,
-      referenceNumber: 'REF001BTC240115',
-      processingTime: 'Pending review'
-    },
-    {
-      id: 'TXN002',
-      userId: 'user_002',
-      userName: 'Jane Smith',
-      userEmail: 'jane@example.com',
-      type: 'sell',
-      cryptocurrency: 'ETH',
-      amount: 2.0,
-      amountNGN: 10560000,
-      status: 'awaiting_crypto',
-      createdAt: '2024-01-15T14:20:00Z',
-      paymentMethod: 'Bank Transfer',
-      bankDetails: {
-        accountName: 'Jane Smith',
-        accountNumber: '1234567890',
-        bankName: 'GTBank'
-      },
-      proof: {
-        cryptoProof: 'crypto_transfer_002.jpg',
-        transactionHash: '0xa1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6',
-        walletAddress: '0x742d35Cc6634C0532925a3b8D4C2C4e4C4C4C4C4',
-        network: 'Ethereum',
-        customerNotes: 'Urgent sale for emergency'
-      },
-      fee: 211200,
-      rate: 5280000,
-      referenceNumber: 'REF002ETH240115',
-      processingTime: 'Awaiting crypto confirmation'
-    },
-    {
-      id: 'TXN003',
-      userId: 'user_003',
-      userName: 'Mike Johnson',
-      userEmail: 'mike@example.com',
-      type: 'buy',
-      cryptocurrency: 'USDT',
-      amount: 1000,
-      amountNGN: 1650000,
-      status: 'completed',
-      createdAt: '2024-01-15T09:15:00Z',
-      completedAt: '2024-01-15T09:20:00Z',
-      paymentMethod: 'Bank Transfer',
-      bankDetails: {
-        accountName: 'Brightola Exchange Limited',
-        accountNumber: '0123456789',
-        bankName: 'Guaranty Trust Bank'
-      },
-      proof: {
-        paymentProof: 'payment_screenshot_003.jpg',
-        transactionReference: 'TRF240115005678',
-        customerNotes: 'Quick USDT purchase'
-      },
-      fee: 33000,
-      rate: 1650,
-      referenceNumber: 'REF003USDT240115',
-      processingTime: '5 minutes',
-      adminNotes: 'Payment verified and processed successfully'
-    },
-    {
-      id: 'TXN004',
-      userId: 'user_004',
-      userName: 'Sarah Wilson',
-      userEmail: 'sarah@example.com',
-      type: 'sell',
-      cryptocurrency: 'SOL',
-      amount: 10,
-      amountNGN: 1980000,
-      status: 'failed',
-      createdAt: '2024-01-14T16:45:00Z',
-      paymentMethod: 'Bank Transfer',
-      bankDetails: {
-        accountName: 'Sarah Wilson',
-        accountNumber: '9876543210',
-        bankName: 'Access Bank'
-      },
-      proof: {
-        cryptoProof: 'crypto_transfer_004.jpg',
-        transactionHash: 'invalid_hash_provided',
-        walletAddress: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-        network: 'Solana',
-        customerNotes: 'Please process quickly'
-      },
-      fee: 39600,
-      rate: 198000,
-      referenceNumber: 'REF004SOL240114',
-      processingTime: '2 hours',
-      failureReason: 'Invalid transaction hash provided',
-      adminNotes: 'Customer provided incorrect transaction hash. Requested resubmission.'
-    }
-  ];
-
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.cryptocurrency.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = transaction.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.cryptocurrency?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.referenceNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
     const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
     
@@ -241,28 +125,35 @@ const Transactions: React.FC = () => {
 
   const handleStatusUpdate = async (transactionId: string, newStatus: string) => {
     setIsUpdating(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update transaction status logic here
-    console.log(`Updating transaction ${transactionId} to status: ${newStatus}`);
-    
-    setIsUpdating(false);
-    setSelectedTransaction(null);
+    try {
+      await updateTransactionStatus(transactionId, newStatus as any, adminNotes, failureReason);
+      handleRefresh();
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error("Error updating transaction status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleAddAdminNotes = async (transactionId: string) => {
     if (!adminNotes.trim()) return;
     
     setIsUpdating(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Add admin notes logic here
-    console.log(`Adding admin notes to transaction ${transactionId}: ${adminNotes}`);
-    
-    setAdminNotes('');
-    setIsUpdating(false);
+    try {
+      await updateTransactionStatus(
+        transactionId, 
+        selectedTransaction?.status as any, 
+        adminNotes,
+        selectedTransaction?.failureReason
+      );
+      handleRefresh();
+    } catch (error) {
+      console.error("Error adding admin notes:", error);
+    } finally {
+      setAdminNotes('');
+      setIsUpdating(false);
+    }
   };
 
   const handleRejectTransaction = async (transactionId: string) => {
@@ -272,16 +163,34 @@ const Transactions: React.FC = () => {
     }
     
     setIsUpdating(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Reject transaction logic here
-    console.log(`Rejecting transaction ${transactionId}: ${failureReason}`);
-    
-    setFailureReason('');
-    setIsUpdating(false);
-    setSelectedTransaction(null);
+    try {
+      await updateTransactionStatus(transactionId, 'failed', adminNotes, failureReason);
+      handleRefresh();
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error("Error rejecting transaction:", error);
+    } finally {
+      setFailureReason('');
+      setIsUpdating(false);
+    }
   };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Calculate stats
+  const underReview = transactions.filter(t => t.status === 'under_review').length;
+  const awaitingPayment = transactions.filter(t => t.status === 'awaiting_payment').length;
+  const awaitingCrypto = transactions.filter(t => t.status === 'awaiting_crypto').length;
+  const completedToday = transactions.filter(t => t.status === 'completed').length;
 
   return (
     <AdminLayout>
@@ -294,6 +203,10 @@ const Transactions: React.FC = () => {
               <p className="text-gray-400 mt-1">Monitor and manage all platform transactions with proof verification</p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-3">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isRefreshing}
+              />
               <AnimatedButton
                 variant="secondary"
                 icon={Download}
@@ -310,25 +223,25 @@ const Transactions: React.FC = () => {
           {[
             {
               name: 'Under Review',
-              value: transactions.filter(t => t.status === 'under_review').length.toString(),
+              value: underReview.toString(),
               icon: Eye,
               color: 'orange'
             },
             {
               name: 'Awaiting Payment',
-              value: transactions.filter(t => t.status === 'awaiting_payment').length.toString(),
+              value: awaitingPayment.toString(),
               icon: Banknote,
               color: 'blue'
             },
             {
               name: 'Awaiting Crypto',
-              value: transactions.filter(t => t.status === 'awaiting_crypto').length.toString(),
+              value: awaitingCrypto.toString(),
               icon: Wallet,
               color: 'purple'
             },
             {
               name: 'Completed Today',
-              value: transactions.filter(t => t.status === 'completed').length.toString(),
+              value: completedToday.toString(),
               icon: CheckCircle,
               color: 'green'
             }
@@ -503,7 +416,7 @@ const Transactions: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button 
-                          onClick={() => setSelectedTransaction(transaction)}
+                          onClick={() => setSelectedTransaction(transaction as EnhancedTransaction)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                         >
                           <Eye className="w-4 h-4" />
@@ -844,6 +757,11 @@ const Transactions: React.FC = () => {
                   >
                     Contact User
                   </AnimatedButton>
+                  <RefreshButton 
+                    onRefresh={handleRefresh} 
+                    loading={isRefreshing}
+                    size="sm"
+                  />
                   <AnimatedButton
                     variant="primary"
                     onClick={() => setSelectedTransaction(null)}
