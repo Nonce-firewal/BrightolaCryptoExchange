@@ -267,28 +267,52 @@ const Dashboard: React.FC = () => {
               description: 'Purchase with NGN',
               href: '/buy',
               icon: ArrowDownRight,
-              color: 'green'
+              color: 'green',
+              bgColor: 'bg-green-900/50',
+              borderColor: 'border-green-700',
+              hoverBg: 'hover:bg-green-900/70',
+              titleColor: 'text-green-300',
+              descColor: 'text-green-400',
+              iconColor: 'text-green-400'
             },
             {
               title: 'Sell Crypto',
               description: 'Convert to NGN',
               href: '/sell',
               icon: ArrowUpRight,
-              color: 'orange'
+              color: 'orange',
+              bgColor: 'bg-orange-900/50',
+              borderColor: 'border-orange-700',
+              hoverBg: 'hover:bg-orange-900/70',
+              titleColor: 'text-orange-300',
+              descColor: 'text-orange-400',
+              iconColor: 'text-orange-400'
             },
             {
               title: 'Transactions',
               description: 'View history',
               href: '/transactions',
               icon: Activity,
-              color: 'purple'
+              color: 'purple',
+              bgColor: 'bg-purple-900/50',
+              borderColor: 'border-purple-700',
+              hoverBg: 'hover:bg-purple-900/70',
+              titleColor: 'text-purple-300',
+              descColor: 'text-purple-400',
+              iconColor: 'text-purple-400'
             },
             {
               title: 'Referrals',
               description: 'Earn rewards',
               href: '/referrals',
               icon: TrendingUp,
-              color: 'blue'
+              color: 'blue',
+              bgColor: 'bg-blue-900/50',
+              borderColor: 'border-blue-700',
+              hoverBg: 'hover:bg-blue-900/70',
+              titleColor: 'text-blue-300',
+              descColor: 'text-blue-400',
+              iconColor: 'text-blue-400'
             }
           ].map((action, index) => {
             const Icon = action.icon;
@@ -296,15 +320,15 @@ const Dashboard: React.FC = () => {
               <Link
                 key={action.title}
                 to={action.href}
-                className={`bg-${action.color}-900/50 border border-${action.color}-700 rounded-lg p-6 hover:bg-${action.color}-900/70 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl group`}
+                className={`${action.bgColor} border ${action.borderColor} rounded-lg p-6 ${action.hoverBg} transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl group`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className={`font-semibold text-${action.color}-300`}>{action.title}</h3>
-                    <p className={`text-sm text-${action.color}-400 mt-1`}>{action.description}</p>
+                    <h3 className={`font-semibold ${action.titleColor}`}>{action.title}</h3>
+                    <p className={`text-sm ${action.descColor} mt-1`}>{action.description}</p>
                   </div>
-                  <Icon className={`w-6 h-6 text-${action.color}-400 group-hover:scale-110 transition-transform duration-300`} />
+                  <Icon className={`w-6 h-6 ${action.iconColor} group-hover:scale-110 transition-transform duration-300`} />
                 </div>
               </Link>
             );
