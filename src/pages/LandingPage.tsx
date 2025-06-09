@@ -131,12 +131,12 @@ const LandingPage: React.FC = () => {
               Trade Crypto
             </Link>
 
-            {/* Half Phone Mockup - Only showing bottom portion */}
+            {/* Half Phone Mockup - Only showing top portion */}
             <div className="flex justify-center mb-16">
               <div className="relative">
-                {/* Phone Frame - Only bottom half visible */}
-                <div className="w-80 h-80 bg-gray-800 rounded-b-[3rem] p-3 shadow-2xl border-4 border-gray-700 border-t-0 overflow-hidden">
-                  <div className="w-full h-full bg-gray-900 rounded-b-[2.5rem] overflow-hidden relative">
+                {/* Phone Frame - Only top half visible */}
+                <div className="w-80 h-80 bg-gray-800 rounded-t-[3rem] p-3 shadow-2xl border-4 border-gray-700 border-b-0 overflow-hidden">
+                  <div className="w-full h-full bg-gray-900 rounded-t-[2.5rem] overflow-hidden relative">
                     {/* Status Bar */}
                     <div className="flex justify-between items-center px-6 py-3 text-sm text-white bg-gray-900">
                       <span>08:31</span>
