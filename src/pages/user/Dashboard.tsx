@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-white">Welcome back, {user?.name}!</h1>
               <p className="text-gray-400 mt-1">Here's what's happening with your crypto portfolio today.</p>
-              <p className="text-sm text-gray-500 mt-2">Your Referral Code: <span className="font-mono font-semibold text-orange-500">{user?.referralCode}</span></p>
+              <p className="text-sm text-gray-400 mt-2">Your Referral Code: <span className="font-mono font-semibold text-orange-500">{user?.referralCode}</span></p>
             </div>
             <div className="mt-4 lg:mt-0 flex space-x-4">
               <AnimatedButton

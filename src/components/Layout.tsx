@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className={`fixed inset-y-0 left-0 flex w-64 flex-col bg-gray-800 transition-transform duration-300 transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700 animate-slideInFromTop">
             <Link to="/dashboard" className="flex items-center">
               <div className="text-xl font-bold">
                 <span className="text-white">BRIGHTOLA</span>
@@ -56,7 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Link>
             <button 
               onClick={() => setSidebarOpen(false)} 
-              className="text-gray-400 hover:text-gray-300 transition-colors duration-300"
+              className="text-gray-400 hover:text-gray-300 transition-all duration-300 transform hover:scale-110 hover:rotate-90"
             >
               <X className="w-6 h-6" />
             </button>
@@ -70,19 +70,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform hover:scale-105 ${
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform hover:scale-105 animate-slideInFromLeft ${
                     isActive
                       ? 'bg-orange-500 text-white shadow-lg'
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                   }`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  style={{ 
+                    animationDelay: `${index * 0.1}s`,
+                    animationFillMode: 'both'
+                  }}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
+                  <Icon className={`w-5 h-5 mr-3 transition-transform duration-300 ${
+                    isActive ? '' : 'group-hover:scale-110'
+                  }`} />
                   {item.name}
                 </Link>
               );
             })}
           </nav>
+          <div className="p-4 border-t border-gray-700 animate-slideInFromBottom">
+            <div className="flex items-center group">
+              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-orange-500 group-hover:scale-110">
+                <User className="w-4 h-4 text-gray-300 group-hover:text-white" />
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-white">{user?.name}</p>
+                <p className="text-xs text-gray-400">{user?.email}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="text-gray-400 hover:text-gray-300 transition-all duration-300 transform hover:scale-110 hover:rotate-12"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -144,9 +166,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="sticky top-0 z-40 flex h-16 bg-gray-800 border-b border-gray-700 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="px-4 text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500 lg:hidden transition-all duration-300 hover:text-gray-300"
+            className="px-4 text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500 lg:hidden transition-all duration-300 hover:text-gray-300 transform hover:scale-110"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6 animate-pulse" />
           </button>
           <div className="flex-1 flex items-center justify-between px-4">
             <Link to="/dashboard" className="flex items-center group">
@@ -157,7 +179,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Link>
             <button
               onClick={logout}
-              className="text-gray-400 hover:text-gray-300 transition-all duration-300 transform hover:scale-110"
+              className="text-gray-400 hover:text-gray-300 transition-all duration-300 transform hover:scale-110 hover:rotate-12"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -174,6 +196,53 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {children}
         </main>
       </div>
+
+      <style jsx>{`
+        @keyframes slideInFromTop {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInFromLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInFromBottom {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slideInFromTop {
+          animation: slideInFromTop 0.5s ease-out;
+        }
+
+        .animate-slideInFromLeft {
+          animation: slideInFromLeft 0.6s ease-out;
+        }
+
+        .animate-slideInFromBottom {
+          animation: slideInFromBottom 0.7s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
