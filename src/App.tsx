@@ -28,6 +28,7 @@ import Settings from './pages/admin/Settings';
 import Transactions from './pages/admin/Transactions';
 import UserManagement from './pages/admin/UserManagement';
 import BankWalletManagement from './pages/admin/BankWalletManagement';
+import NetworkManagement from './pages/admin/NetworkManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -106,6 +107,11 @@ function App() {
                 <Route path="/admin/custom-tokens" element={
                   <AdminRoute>
                     <CustomTokens />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/networks" element={
+                  <AdminRoute>
+                    <NetworkManagement />
                   </AdminRoute>
                 } />
                 <Route path="/admin/settings" element={

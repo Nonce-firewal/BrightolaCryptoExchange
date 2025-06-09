@@ -13,7 +13,9 @@ import {
   Menu,
   X,
   BarChart3,
-  Users
+  Users,
+  Network,
+  Building
 } from 'lucide-react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
@@ -35,6 +37,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Coins & Networks', href: '/admin/coins', icon: Coins },
     { name: 'Custom Tokens', href: '/admin/custom-tokens', icon: Sparkles },
+    { name: 'Networks', href: '/admin/networks', icon: Network },
+    { name: 'Bank & Wallets', href: '/admin/bank-wallet', icon: Building },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 

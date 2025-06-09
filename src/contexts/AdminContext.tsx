@@ -18,6 +18,17 @@ interface WalletAddress {
   createdAt: string;
 }
 
+interface Network {
+  id: string;
+  name: string;
+  symbol: string;
+  chainId?: string;
+  rpcUrl?: string;
+  explorerUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 interface CustomToken {
   id: string;
   symbol: string;
@@ -36,6 +47,7 @@ interface CustomToken {
   priceNGN: number;
   change24h: number;
   createdAt: string;
+  logo?: string;
 }
 
 interface Coin {
@@ -53,11 +65,13 @@ interface Coin {
   priceUSD: number;
   priceNGN: number;
   change24h: number;
+  logo?: string;
 }
 
 interface AdminSettings {
   bankAccounts: BankAccount[];
   walletAddresses: WalletAddress[];
+  networks: Network[];
   customTokens: CustomToken[];
   supportedCoins: Coin[];
   tradingSettings: {
@@ -85,6 +99,9 @@ interface AdminContextType {
   updateWalletAddress: (wallet: WalletAddress) => void;
   addWalletAddress: (wallet: Omit<WalletAddress, 'id' | 'createdAt'>) => void;
   deleteWalletAddress: (id: string) => void;
+  updateNetwork: (network: Network) => void;
+  addNetwork: (network: Omit<Network, 'id' | 'createdAt'>) => void;
+  deleteNetwork: (id: string) => void;
   updateCustomToken: (token: CustomToken) => void;
   addCustomToken: (token: Omit<CustomToken, 'id' | 'createdAt'>) => void;
   deleteCustomToken: (id: string) => void;
@@ -95,8 +112,10 @@ interface AdminContextType {
   updateKYCSettings: (settings: AdminSettings['kycSettings']) => void;
   getActiveBankAccounts: () => BankAccount[];
   getActiveWalletAddress: (crypto: string, network?: string) => WalletAddress | null;
-  getActiveCoins: () => (Coin | CustomToken)[];
+  getActiveCoins: () => Coin[];
+  getActiveNetworks: () => Network[];
   getAllActiveTokens: () => (Coin | CustomToken)[];
+  getAvailableNetworksForCrypto: (crypto: string) => string[];
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -137,6 +156,61 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         createdAt: '2024-01-01T00:00:00Z'
       }
     ],
+    networks: [
+      {
+        id: 'net_001',
+        name: 'Bitcoin',
+        symbol: 'BTC',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'net_002',
+        name: 'Ethereum',
+        symbol: 'ETH',
+        chainId: '1',
+        rpcUrl: 'https://mainnet.infura.io/v3/',
+        explorerUrl: 'https://etherscan.io',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'net_003',
+        name: 'Binance Smart Chain',
+        symbol: 'BNB',
+        chainId: '56',
+        rpcUrl: 'https://bsc-dataseed.binance.org/',
+        explorerUrl: 'https://bscscan.com',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'net_004',
+        name: 'Polygon',
+        symbol: 'MATIC',
+        chainId: '137',
+        rpcUrl: 'https://polygon-rpc.com/',
+        explorerUrl: 'https://polygonscan.com',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'net_005',
+        name: 'Solana',
+        symbol: 'SOL',
+        explorerUrl: 'https://explorer.solana.com',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'net_006',
+        name: 'Tron',
+        symbol: 'TRX',
+        explorerUrl: 'https://tronscan.org',
+        isActive: true,
+        createdAt: '2024-01-01T00:00:00Z'
+      }
+    ],
     walletAddresses: [
       {
         id: 'wallet_001',
@@ -157,7 +231,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {
         id: 'wallet_003',
         cryptocurrency: 'USDT',
-        network: 'Ethereum (ERC-20)',
+        network: 'Ethereum',
         address: '0x742d35Cc6634C0532925a3b8D4C2C4e4C4C4C4C4',
         isActive: true,
         createdAt: '2024-01-01T00:00:00Z'
@@ -165,7 +239,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {
         id: 'wallet_004',
         cryptocurrency: 'USDT',
-        network: 'Tron (TRC-20)',
+        network: 'Tron',
         address: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
         isActive: true,
         createdAt: '2024-01-01T00:00:00Z'
@@ -216,6 +290,25 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         priceUSD: 0.000001,
         priceNGN: 0.00165,
         change24h: -2.1,
+        createdAt: '2024-01-01T00:00:00Z'
+      },
+      {
+        id: 'token_003',
+        symbol: 'MATIC',
+        name: 'Polygon',
+        contractAddress: '0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0',
+        network: 'Polygon',
+        decimals: 18,
+        isActive: true,
+        buyEnabled: true,
+        sellEnabled: true,
+        buyMargin: 2.5,
+        sellMargin: 2.5,
+        minAmount: 10,
+        maxAmount: 100000,
+        priceUSD: 0.85,
+        priceNGN: 1402.5,
+        change24h: 3.7,
         createdAt: '2024-01-01T00:00:00Z'
       }
     ],
@@ -301,6 +394,33 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       verificationTimeout: 48
     }
   });
+
+  // Network management functions
+  const updateNetwork = (network: Network) => {
+    setSettings(prev => ({
+      ...prev,
+      networks: prev.networks.map(n => n.id === network.id ? network : n)
+    }));
+  };
+
+  const addNetwork = (network: Omit<Network, 'id' | 'createdAt'>) => {
+    const newNetwork: Network = {
+      ...network,
+      id: 'net_' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setSettings(prev => ({
+      ...prev,
+      networks: [...prev.networks, newNetwork]
+    }));
+  };
+
+  const deleteNetwork = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      networks: prev.networks.filter(n => n.id !== id)
+    }));
+  };
 
   const updateBankAccount = (account: BankAccount) => {
     setSettings(prev => ({
@@ -428,10 +548,23 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return settings.supportedCoins.filter(coin => coin.status === 'active');
   };
 
+  const getActiveNetworks = () => {
+    return settings.networks.filter(network => network.isActive);
+  };
+
   const getAllActiveTokens = () => {
     const activeCoins = settings.supportedCoins.filter(coin => coin.status === 'active');
     const activeTokens = settings.customTokens.filter(token => token.isActive);
     return [...activeCoins, ...activeTokens];
+  };
+
+  const getAvailableNetworksForCrypto = (crypto: string) => {
+    // Get networks that have wallet addresses for this crypto
+    const availableNetworks = settings.walletAddresses
+      .filter(w => w.cryptocurrency === crypto && w.isActive)
+      .map(w => w.network);
+    
+    return [...new Set(availableNetworks)]; // Remove duplicates
   };
 
   const value: AdminContextType = {
@@ -442,6 +575,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateWalletAddress,
     addWalletAddress,
     deleteWalletAddress,
+    updateNetwork,
+    addNetwork,
+    deleteNetwork,
     updateCustomToken,
     addCustomToken,
     deleteCustomToken,
@@ -453,7 +589,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getActiveBankAccounts,
     getActiveWalletAddress,
     getActiveCoins,
-    getAllActiveTokens
+    getActiveNetworks,
+    getAllActiveTokens,
+    getAvailableNetworksForCrypto
   };
 
   return (
