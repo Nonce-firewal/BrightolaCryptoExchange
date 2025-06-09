@@ -24,6 +24,27 @@ import {
 const LandingPage: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all elements with animation classes
+    const animatedElements = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right, .fade-in-scale, .stagger-children > *');
+    animatedElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   const features = [
     {
       icon: Shield,
@@ -49,8 +70,146 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes slideInFromBottom {
+          from {
+            opacity: 0;
+            transform: translateY(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .fade-in-up {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: all 0.6s ease-out;
+        }
+
+        .fade-in-left {
+          opacity: 0;
+          transform: translateX(-30px);
+          transition: all 0.6s ease-out;
+        }
+
+        .fade-in-right {
+          opacity: 0;
+          transform: translateX(30px);
+          transition: all 0.6s ease-out;
+        }
+
+        .fade-in-scale {
+          opacity: 0;
+          transform: scale(0.9);
+          transition: all 0.6s ease-out;
+        }
+
+        .animate-in {
+          opacity: 1 !important;
+          transform: translateY(0) translateX(0) scale(1) !important;
+        }
+
+        .stagger-children > * {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: all 0.6s ease-out;
+        }
+
+        .stagger-children.animate-in > *:nth-child(1) { transition-delay: 0.1s; }
+        .stagger-children.animate-in > *:nth-child(2) { transition-delay: 0.2s; }
+        .stagger-children.animate-in > *:nth-child(3) { transition-delay: 0.3s; }
+        .stagger-children.animate-in > *:nth-child(4) { transition-delay: 0.4s; }
+        .stagger-children.animate-in > *:nth-child(5) { transition-delay: 0.5s; }
+        .stagger-children.animate-in > *:nth-child(6) { transition-delay: 0.6s; }
+
+        .hero-text {
+          animation: fadeInUp 1s ease-out;
+        }
+
+        .hero-cta {
+          animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .hero-phone {
+          animation: fadeInScale 1s ease-out 0.6s both;
+        }
+
+        .hero-subtitle {
+          animation: fadeInUp 1s ease-out 0.9s both;
+        }
+
+        .floating-animation {
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+
+        .parallax-bg {
+          background-attachment: fixed;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: cover;
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      `}</style>
+
       {/* Header */}
-      <header className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 z-50">
+      <header className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 z-50 fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
@@ -107,14 +266,20 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-20 min-h-screen flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-24 pb-20 min-h-screen flex items-center relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
             {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight hero-text">
               Buy and Sell
               <br />
-              <span className="text-orange-500">Cryptocurrency</span>
+              <span className="gradient-text">Cryptocurrency</span>
               <br />
               easily with Bank
               <br />
@@ -124,14 +289,14 @@ const LandingPage: React.FC = () => {
             {/* CTA Button */}
             <Link
               to="/register"
-              className="inline-block bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-colors mb-16"
+              className="inline-block bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl mb-16 hero-cta"
             >
               Trade Crypto
             </Link>
 
             {/* Half Phone Mockup - Only showing top portion */}
-            <div className="flex justify-center mb-16">
-              <div className="relative">
+            <div className="flex justify-center mb-16 hero-phone">
+              <div className="relative floating-animation">
                 {/* Phone Frame - Only top half visible */}
                 <div className="w-80 h-80 bg-gray-800 rounded-t-[3rem] p-3 shadow-2xl border-4 border-gray-700 border-b-0 overflow-hidden">
                   <div className="w-full h-full bg-gray-900 rounded-t-[2.5rem] overflow-hidden relative">
@@ -189,7 +354,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* Subtitle */}
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto hero-subtitle">
               Depositing and withdrawing from your trading account just got easier with Brightola.
             </p>
           </div>
@@ -197,14 +362,23 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="text-center mb-16 fade-in-up">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Why Choose Brightola?
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Experience the future of crypto trading with our cutting-edge platform.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div key={index} className="bg-gray-800 p-8 rounded-2xl border border-gray-700">
-                  <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-6">
+                <div key={index} className="bg-gray-800 p-8 rounded-2xl border border-gray-700 hover:border-orange-500/50 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl group">
+                  <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-4">{feature.title}</h3>
@@ -217,9 +391,10 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+      <section id="how-it-works" className="py-20 bg-gray-800 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16 fade-in-up">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               How It Works
             </h2>
@@ -228,7 +403,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
             {[
               {
                 number: '01',
@@ -257,11 +432,11 @@ const LandingPage: React.FC = () => {
             ].map((step, index) => {
               const Icon = step.icon;
               return (
-                <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-orange-500 text-white rounded-xl flex items-center justify-center text-xl font-bold mb-6 mx-auto">
+                <div key={index} className="text-center group">
+                  <div className="w-16 h-16 bg-orange-500 text-white rounded-xl flex items-center justify-center text-xl font-bold mb-6 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg">
                     {step.number}
                   </div>
-                  <div className="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                  <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 hover:border-orange-500/50 transition-all duration-300 transform hover:-translate-y-2">
                     <Icon className="w-8 h-8 text-orange-500 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
                     <p className="text-gray-400">{step.description}</p>
@@ -273,23 +448,54 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 stagger-children">
+            {[
+              { number: '10,000+', label: 'Happy Users', icon: Users },
+              { number: '₦2.5B+', label: 'Volume Traded', icon: TrendingUp },
+              { number: '99.9%', label: 'Uptime', icon: Shield }
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <div key={index} className="text-center p-8 bg-gray-800 rounded-2xl border border-gray-700 hover:border-orange-500/50 transition-all duration-300 transform hover:-translate-y-2">
+                  <Icon className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  <div className="text-4xl font-bold text-white mb-2">{stat.number}</div>
+                  <div className="text-gray-400 text-lg">{stat.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Ready to Start Your Crypto Journey?
-          </h2>
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied users who trust Brightola Exchange for secure crypto trading.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 transition-colors inline-flex items-center justify-center"
-            >
-              Create Free Account
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Link>
+      <section className="py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="fade-in-up">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Ready to Start Your Crypto Journey?
+            </h2>
+            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+              Join thousands of satisfied users who trust Brightola Exchange for secure crypto trading.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/register"
+                className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-xl inline-flex items-center justify-center"
+              >
+                Create Free Account
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+              <a
+                href="#features"
+                className="border-2 border-orange-500 text-orange-500 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 transform hover:scale-105"
+              >
+                Learn More
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -297,7 +503,7 @@ const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-800 border-t border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 fade-in-up">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-6">
                 <div className="text-2xl font-bold">
@@ -350,7 +556,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           
-          <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center fade-in-up">
             <p className="text-gray-400 text-sm">
               © 2024 Brightola Exchange. All rights reserved.
             </p>
