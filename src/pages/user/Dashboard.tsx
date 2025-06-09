@@ -162,11 +162,13 @@ const Dashboard: React.FC = () => {
             <div className={`mt-4 lg:mt-0 flex space-x-4 transition-all duration-700 delay-900 ${
               headerVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}>
-              <RefreshButton 
-                onRefresh={handleRefresh} 
-                loading={isRefreshing}
-                size="sm"
-              />
+              <button
+                onClick={handleRefresh}
+                className={`p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-300 ${isRefreshing ? 'animate-spin' : 'hover:scale-110'}`}
+                title="Refresh data"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
               <Link to="/buy">
                 <AnimatedButton
                   variant="success"
@@ -279,11 +281,13 @@ const Dashboard: React.FC = () => {
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                 Live prices
               </span>
-              <RefreshButton 
-                onRefresh={handleRefresh} 
-                loading={isRefreshing}
-                size="sm"
-              />
+              <button
+                onClick={handleRefresh}
+                className={`p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-300 ${isRefreshing ? 'animate-spin' : 'hover:scale-110'}`}
+                title="Refresh prices"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
