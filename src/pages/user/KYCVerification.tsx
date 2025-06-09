@@ -45,6 +45,47 @@ const KYCVerification: React.FC = () => {
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation();
 
+  // All 36 Nigerian states
+  const nigerianStates = [
+    'Abia',
+    'Adamawa',
+    'Akwa Ibom',
+    'Anambra',
+    'Bauchi',
+    'Bayelsa',
+    'Benue',
+    'Borno',
+    'Cross River',
+    'Delta',
+    'Ebonyi',
+    'Edo',
+    'Ekiti',
+    'Enugu',
+    'Federal Capital Territory (FCT)',
+    'Gombe',
+    'Imo',
+    'Jigawa',
+    'Kaduna',
+    'Kano',
+    'Katsina',
+    'Kebbi',
+    'Kogi',
+    'Kwara',
+    'Lagos',
+    'Nasarawa',
+    'Niger',
+    'Ogun',
+    'Ondo',
+    'Osun',
+    'Oyo',
+    'Plateau',
+    'Rivers',
+    'Sokoto',
+    'Taraba',
+    'Yobe',
+    'Zamfara'
+  ];
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -340,14 +381,15 @@ const KYCVerification: React.FC = () => {
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 max-h-40 overflow-y-auto"
+                      style={{ maxHeight: '200px' }}
                     >
                       <option value="">Select State</option>
-                      <option value="lagos">Lagos</option>
-                      <option value="abuja">Abuja</option>
-                      <option value="kano">Kano</option>
-                      <option value="rivers">Rivers</option>
-                      <option value="ogun">Ogun</option>
+                      {nigerianStates.map((state) => (
+                        <option key={state} value={state.toLowerCase().replace(/\s+/g, '-')}>
+                          {state}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
