@@ -126,6 +126,39 @@ const LandingPage: React.FC = () => {
           }
         }
 
+        @keyframes slideInFromTop {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInFromLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInMobileMenu {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         .fade-in-up {
           opacity: 0;
           transform: translateY(30px);
@@ -188,6 +221,18 @@ const LandingPage: React.FC = () => {
           animation: float 6s ease-in-out infinite;
         }
 
+        .animate-slideInFromTop {
+          animation: slideInFromTop 0.5s ease-out;
+        }
+
+        .animate-slideInFromLeft {
+          animation: slideInFromLeft 0.6s ease-out;
+        }
+
+        .animate-slideInMobileMenu {
+          animation: slideInMobileMenu 0.4s ease-out;
+        }
+
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
@@ -243,21 +288,53 @@ const LandingPage: React.FC = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-300"
+              className="md:hidden text-gray-300 transition-all duration-300 transform hover:scale-110 hover:text-orange-500"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 transition-transform duration-300 transform rotate-90" />
+              ) : (
+                <Menu className="w-6 h-6 animate-pulse" />
+              )}
             </button>
           </div>
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-800">
+            <div className="md:hidden py-4 border-t border-gray-800 animate-slideInMobileMenu">
               <nav className="flex flex-col space-y-4">
-                <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-                <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">How It Works</a>
+                <a 
+                  href="#features" 
+                  className="text-gray-300 hover:text-white transition-all duration-300 transform hover:translate-x-2 animate-slideInFromLeft"
+                  style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a 
+                  href="#how-it-works" 
+                  className="text-gray-300 hover:text-white transition-all duration-300 transform hover:translate-x-2 animate-slideInFromLeft"
+                  style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How It Works
+                </a>
                 <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
-                  <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link>
-                  <Link to="/register" className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors text-center">Get Started</Link>
+                  <Link 
+                    to="/login" 
+                    className="text-gray-300 hover:text-white transition-all duration-300 transform hover:translate-x-2 animate-slideInFromLeft"
+                    style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-all duration-300 text-center transform hover:scale-105 animate-slideInFromLeft"
+                    style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
                 </div>
               </nav>
             </div>
